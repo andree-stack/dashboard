@@ -8,7 +8,8 @@ export default function OperationsPage() {
         <h1 className="text-[22px] font-bold text-ink-1">Vận hành: Payout &amp; ROAS</h1>
         <p className="text-[13px] text-ink-2">
           Hiệu quả chi hoa hồng theo kênh — nguồn duy nhất: VN RunRate&apos;26 (khối daily
-          Gross GMV / Payout / Avg Comm / ROAS). Tháng 4/2026.
+          Gross GMV / Payout / Avg Comm / ROAS). Dữ liệu chi tiết hiện chỉ mới trích xuất cho
+          Tháng 4/2026 — chọn tháng đó ở bộ lọc phía trên để xem số liệu.
         </p>
       </div>
 

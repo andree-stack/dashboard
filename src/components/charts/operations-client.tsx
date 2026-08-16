@@ -3,11 +3,21 @@
 import { useMemo } from "react";
 import { useFilters } from "@/components/filter-context";
 import { BarList } from "@/components/charts/bar-list";
-import { operationsByChannel, platformColor } from "@/lib/data";
+import { MONTHS, OPERATIONS_MONTH, operationsByChannel, platformColor } from "@/lib/data";
 import { formatVnd, formatPercent } from "@/lib/utils";
 
+function NoOperationsData() {
+  const opsLabel = MONTHS.find((m) => m.key === OPERATIONS_MONTH)?.label;
+  return (
+    <p className="rounded-lg bg-surface-alt px-3 py-8 text-center text-[12.5px] text-ink-3">
+      Dữ liệu Payout/ROAS theo ngày hiện chỉ mới trích xuất cho {opsLabel}. Chọn tháng đó ở bộ lọc
+      để xem.
+    </p>
+  );
+}
+
 export function PayoutSection() {
-  const { platform } = useFilters();
+  const { month, platform } = useFilters();
   const rows = useMemo(
     () =>
       operationsByChannel
@@ -21,11 +31,12 @@ export function PayoutSection() {
         })),
     [platform]
   );
+  if (month !== OPERATIONS_MONTH) return <NoOperationsData />;
   return <BarList data={rows} />;
 }
 
 export function RoasSection() {
-  const { platform } = useFilters();
+  const { month, platform } = useFilters();
   const rows = useMemo(
     () =>
       operationsByChannel
@@ -39,17 +50,19 @@ export function RoasSection() {
         })),
     [platform]
   );
+  if (month !== OPERATIONS_MONTH) return <NoOperationsData />;
   return <BarList data={rows} valueFormatter={(v) => `${v.toFixed(1)}x`} />;
 }
 
 export function OperationsSummary() {
-  const { platform } = useFilters();
+  const { month, platform } = useFilters();
   const rows = operationsByChannel.filter(
     (r) => platform === "Tất cả" || r.platform === platform
   );
   const totalPayout = rows.reduce((s, r) => s + r.payout, 0);
   const totalGmv = rows.reduce((s, r) => s + r.payout * r.roas, 0);
   const blendRoas = totalPayout > 0 ? totalGmv / totalPayout : 0;
+  const hasData = month === OPERATIONS_MONTH;
 
   return (
     <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
@@ -58,7 +71,7 @@ export function OperationsSummary() {
           Tổng Payout
         </div>
         <div className="tabular mt-1 text-[20px] font-bold text-ink-1">
-          {formatVnd(totalPayout)}
+          {hasData ? formatVnd(totalPayout) : "—"}
         </div>
       </div>
       <div className="bg-surface p-4">
@@ -66,14 +79,16 @@ export function OperationsSummary() {
           ROAS bình quân (blend)
         </div>
         <div className="tabular mt-1 text-[20px] font-bold text-ink-1">
-          {blendRoas.toFixed(1)}x
+          {hasData ? `${blendRoas.toFixed(1)}x` : "—"}
         </div>
       </div>
       <div className="bg-surface p-4">
         <div className="text-[11px] font-bold uppercase tracking-wide text-ink-3">
           Số kênh đang chạy
         </div>
-        <div className="tabular mt-1 text-[20px] font-bold text-ink-1">{rows.length}</div>
+        <div className="tabular mt-1 text-[20px] font-bold text-ink-1">
+          {hasData ? rows.length : "—"}
+        </div>
       </div>
     </div>
   );

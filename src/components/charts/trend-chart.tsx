@@ -7,12 +7,15 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
+import { useFilters } from "@/components/filter-context";
 import { monthlyTrend } from "@/lib/data";
 import { formatVnd } from "@/lib/utils";
 
 export function TrendChart() {
+  const { month } = useFilters();
   const data = monthlyTrend.map((d) => ({
     ...d,
     actualDisplay: d.actual,
@@ -23,6 +26,12 @@ export function TrendChart() {
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} strokeDasharray="3 3" />
         <XAxis dataKey="month" tickLine={false} axisLine={false} />
+        <ReferenceLine
+          x={month}
+          stroke="var(--color-accent)"
+          strokeDasharray="2 2"
+          label={{ value: "Đang xem", position: "insideTopLeft", fill: "var(--color-accent-ink)", fontSize: 10 }}
+        />
         <YAxis
           tickFormatter={(v) => formatVnd(v)}
           width={72}

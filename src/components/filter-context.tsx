@@ -1,11 +1,13 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
-import type { BuFilter, PlatformFilter } from "@/lib/data";
+import { DEFAULT_MONTH, type BuFilter, type MonthKey, type PlatformFilter } from "@/lib/data";
 
 type FilterState = {
+  month: MonthKey;
   platform: PlatformFilter;
   bu: BuFilter;
+  setMonth: (m: MonthKey) => void;
   setPlatform: (p: PlatformFilter) => void;
   setBu: (b: BuFilter) => void;
 };
@@ -13,12 +15,13 @@ type FilterState = {
 const FilterContext = createContext<FilterState | null>(null);
 
 export function FilterProvider({ children }: { children: React.ReactNode }) {
+  const [month, setMonth] = useState<MonthKey>(DEFAULT_MONTH);
   const [platform, setPlatform] = useState<PlatformFilter>("Tất cả");
   const [bu, setBu] = useState<BuFilter>("Tất cả");
 
   const value = useMemo(
-    () => ({ platform, bu, setPlatform, setBu }),
-    [platform, bu]
+    () => ({ month, platform, bu, setMonth, setPlatform, setBu }),
+    [month, platform, bu]
   );
 
   return (
