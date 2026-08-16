@@ -7,9 +7,8 @@ export default function OperationsPage() {
       <div>
         <h1 className="text-[22px] font-bold text-ink-1">Vận hành: Payout &amp; ROAS</h1>
         <p className="text-[13px] text-ink-2">
-          Hiệu quả chi hoa hồng theo kênh — nguồn duy nhất: VN RunRate&apos;26 (khối daily
-          Gross GMV / Payout / Avg Comm / ROAS). Dữ liệu chi tiết hiện chỉ mới trích xuất cho
-          Tháng 4/2026 — chọn tháng đó ở bộ lọc phía trên để xem số liệu.
+          Hiệu quả chi hoa hồng theo kênh — nguồn: 5 sheet chi tiết giao dịch, group theo tháng
+          (Tháng 4–8/2026). Đổi <b>Kỳ báo cáo</b> ở thanh lọc phía trên để xem theo từng tháng.
         </p>
       </div>
 
@@ -17,9 +16,13 @@ export default function OperationsPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader title="Payout theo kênh" kind="Bar" desc="Tháng 4/2026." />
+          <CardHeader title="Payout theo kênh" kind="Bar" desc="Cập nhật theo tháng đang chọn." />
           <PayoutSection />
-          <CardFootnote>Nguồn: VN RunRate&apos;26 — dòng &quot;Payout&quot;, cột Total.</CardFootnote>
+          <CardFootnote>
+            Nguồn: Σ commission/spend theo đơn hàng — Shopee: &quot;Order Brand Commission to
+            Affiliate&quot;; TikTok Shop: Commission + Shop Ads + creator bonus; Lazada: &quot;Est.
+            Spend&quot;.
+          </CardFootnote>
         </Card>
         <Card>
           <CardHeader
@@ -28,7 +31,10 @@ export default function OperationsPage() {
             desc="Không dùng dual-axis — Avg Comm % ghép nhãn trên cùng bar."
           />
           <RoasSection />
-          <CardFootnote>Nguồn: VN RunRate&apos;26 — dòng &quot;ROAS&quot; &amp; &quot;Avg Comm&quot;.</CardFootnote>
+          <CardFootnote>
+            TikTok Shop PC có ít đơn đã settle ở tháng đầu (T5, T8) nên ROAS bị đẩy lên rất cao —
+            đây là độ trễ ghi nhận hoa hồng, không phải hiệu quả thật.
+          </CardFootnote>
         </Card>
       </div>
 
@@ -36,11 +42,11 @@ export default function OperationsPage() {
         <CardHeader
           title="Payout & ROAS theo ngày trong tháng"
           kind="Line chart · chưa build"
-          desc="Nguồn: VN RunRate'26 — khối daily có đủ 30 cột/tháng (1 cột/ngày) cho mỗi kênh."
+          desc="Cần group dữ liệu giao dịch theo ngày thay vì theo tháng — chưa làm ở bản này."
         />
         <p className="text-[12.5px] text-ink-2">
-          Khi build thật cần xử lý các ô <code className="rounded bg-surface px-1.5 py-0.5">#DIV/0!</code> ở
-          kênh PC chưa launch trước khi vẽ line theo ngày.
+          5 sheet chi tiết có cột ngày giờ đặt đơn (Order Time/Time Created) nên hoàn toàn có thể
+          group theo ngày khi cần, tương tự cách đã group theo tháng ở trên.
         </p>
       </Card>
     </div>

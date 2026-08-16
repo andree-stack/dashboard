@@ -5,34 +5,20 @@ import { useFilters } from "@/components/filter-context";
 import { GroupedBuBar } from "@/components/charts/grouped-bar";
 import { BarList } from "@/components/charts/bar-list";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
-import {
-  PLATFORMS,
-  monthlyPlatformBu,
-  MONTHS,
-  getFilteredKpi,
-  getFilteredOperations,
-  getExampleOrderMetrics,
-  kpiSnapshot,
-  OPERATIONS_MONTH,
-} from "@/lib/data";
+import { PLATFORMS, monthlyPlatformBu, MONTHS, getFilteredKpi, getChannelOps } from "@/lib/data";
 import { formatPercent, formatVnd, statusForAchievement } from "@/lib/utils";
 
 export function KpiRowClient() {
   const { month, platform, bu } = useFilters();
   const k = getFilteredKpi(month, platform, bu);
-  const ops = getFilteredOperations(month, platform, bu);
-  const orderStats = getExampleOrderMetrics(month, platform, bu);
+  const ops = getChannelOps(month, platform, bu);
   const achTone = k.achievementPct != null ? statusForAchievement(k.achievementPct) : null;
 
   const scopeLabel = [platform !== "Tất cả" ? platform : null, bu !== "Tất cả" ? bu : null]
     .filter(Boolean)
     .join(" ");
-  // Phân biệt 2 lý do "không có dữ liệu": sai tháng, hay đúng tháng nhưng bộ lọc
-  // Platform/BU không khớp mẫu dữ liệu hiện có (vd BU=PC, hoặc Lazada/TikTok Shop).
-  const noDataNote =
-    month !== OPERATIONS_MONTH
-      ? `chỉ có dữ liệu cho ${kpiSnapshot.period} — đang xem ${MONTHS.find((m) => m.key === month)?.label}`
-      : `${kpiSnapshot.period} · không có dữ liệu mẫu cho ${scopeLabel || "bộ lọc này"}`;
+  const monthLabel = MONTHS.find((m) => m.key === month)?.label;
+  const noOpsNote = `${monthLabel} · không có dữ liệu cho ${scopeLabel || "bộ lọc này"}`;
 
   return (
     <>
@@ -72,38 +58,43 @@ export function KpiRowClient() {
         <KpiCard
           label="Avg Commission %"
           value={ops.hasData ? formatPercent(ops.avgCommissionPct, 2) : "—"}
-          foot={ops.hasData ? `${kpiSnapshot.period}${scopeLabel ? " · " + scopeLabel : " · 3 kênh MCC"}` : noDataNote}
+          foot={ops.hasData ? `${monthLabel}${scopeLabel ? " · " + scopeLabel : ""}` : noOpsNote}
         />
         <KpiCard
           label="ROAS"
-          value={ops.hasData ? `${ops.roasBlend.toFixed(1)}x` : "—"}
-          foot={ops.hasData ? `${kpiSnapshot.period}${scopeLabel ? " · " + scopeLabel : ""}` : noDataNote}
+          value={ops.hasData ? `${ops.roas.toFixed(1)}x` : "—"}
+          foot={ops.hasData ? `${monthLabel}${scopeLabel ? " · " + scopeLabel : ""}` : noOpsNote}
         />
         <KpiCard
           label="Tỷ lệ đơn Hoàn thành"
-          value={orderStats.hasData ? formatPercent(orderStats.completionRatePct) : "—"}
+          value={ops.completionRatePct != null ? formatPercent(ops.completionRatePct) : "—"}
           foot={
-            orderStats.hasData
-              ? `ví dụ ${orderStats.platformLabel} · ${kpiSnapshot.period}`
-              : noDataNote
+            ops.completionRatePct != null
+              ? `${monthLabel}${scopeLabel ? " · " + scopeLabel : ""}`
+              : ops.hasData
+              ? `${monthLabel} · ${scopeLabel || "kênh này"} không có cột Order Status`
+              : noOpsNote
           }
         />
         <KpiCard
           label="Tỷ lệ hoàn (Refund)"
-          value={orderStats.hasData ? formatPercent(orderStats.refundPct) : "—"}
-          tone={orderStats.hasData ? "good" : undefined}
-          toneLabel={orderStats.hasData ? "thấp" : undefined}
+          value={ops.refundRatePct != null ? formatPercent(ops.refundRatePct) : "—"}
+          tone={ops.refundRatePct != null ? "good" : undefined}
+          toneLabel={ops.refundRatePct != null ? (ops.refundRatePct < 12 ? "thấp" : "theo dõi") : undefined}
           foot={
-            orderStats.hasData
-              ? `ví dụ ${orderStats.platformLabel} · ${kpiSnapshot.period}`
-              : noDataNote
+            ops.refundRatePct != null
+              ? `${monthLabel}${scopeLabel ? " · " + scopeLabel : ""}`
+              : ops.hasData
+              ? `${monthLabel} · ${scopeLabel || "kênh này"} không có cột Refund`
+              : noOpsNote
           }
         />
       </KpiRow>
       <p className="mt-2 text-[11.5px] text-ink-3">
-        4 thẻ đầu cập nhật theo Tháng + Platform + BU đang chọn (nguồn: VN RunRate&apos;26). 4 thẻ
-        sau lọc theo Platform/BU trong phạm vi dữ liệu vận hành chi tiết — hiện chỉ có cho{" "}
-        {kpiSnapshot.period} (Payout/ROAS: 3 kênh MCC · Hoàn thành/Refund: Shopee PC &amp; MCC).
+        4 thẻ đầu nguồn VN RunRate&apos;26. 4 thẻ sau (Avg Commission/ROAS/Hoàn thành/Refund) tính
+        trực tiếp từ 5 sheet chi tiết giao dịch, theo đúng Tháng + Platform + BU đang chọn — GMV nội
+        bộ của nhóm này có thể lệch nhẹ so với 4 thẻ đầu do khác nguồn tổng hợp. Lazada không có cột
+        Order Status/Refund nên Tỷ lệ Hoàn thành/Refund luôn để trống cho kênh đó.
       </p>
     </>
   );

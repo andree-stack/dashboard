@@ -203,51 +203,52 @@ export function getFilteredKpi(month: MonthKey, platform: PlatformFilter, bu: Bu
   };
 }
 
+export type ChannelOpsResult = {
+  hasData: boolean; // true nếu có ít nhất 1 kênh khớp bộ lọc trong tháng này
+  avgCommissionPct: number;
+  roas: number;
+  completionRatePct: number | null; // null = không kênh nào trong phạm vi lọc có dữ liệu Order Status (vd chỉ chọn Lazada)
+  refundRatePct: number | null;
+};
+
 /**
- * Payout/Avg Comm/ROAS cho đúng bộ lọc Platform, trong phạm vi operationsByChannel.
- * Dữ liệu này CHỈ trích xuất cho OPERATIONS_MONTH (Tháng 4/2026) — nếu tháng đang chọn
- * khác tháng đó, trả về hasData:false thay vì lẫn số liệu giữa 2 tháng khác nhau.
+ * Avg Commission % / ROAS / Tỷ lệ Hoàn thành / Tỷ lệ Refund cho đúng bộ lọc Tháng × Platform × BU,
+ * tính trực tiếp từ monthlyChannelOps (nguồn: 5 sheet chi tiết giao dịch — KHÁC nguồn với 4 thẻ
+ * GMV/Target ở trên, vốn lấy từ VN RunRate'26, nên GMV nội bộ 2 nhóm có thể lệch nhẹ).
  */
-export function getFilteredOperations(month: MonthKey, platform: PlatformFilter, bu: BuFilter) {
-  if (month !== OPERATIONS_MONTH || bu === "PC") {
-    return { hasData: false, avgCommissionPct: 0, roasBlend: 0 };
+export function getChannelOps(month: MonthKey, platform: PlatformFilter, bu: BuFilter): ChannelOpsResult {
+  const monthData = monthlyChannelOps[month];
+  if (!monthData) return { hasData: false, avgCommissionPct: 0, roas: 0, completionRatePct: null, refundRatePct: null };
+
+  const rows = Object.entries(monthData)
+    .filter(([key]) => {
+      const [p, b] = key.split("-") as [Platform, BU];
+      return (platform === "Tất cả" || p === platform) && (bu === "Tất cả" || b === bu);
+    })
+    .map(([, v]) => v);
+
+  if (rows.length === 0) {
+    return { hasData: false, avgCommissionPct: 0, roas: 0, completionRatePct: null, refundRatePct: null };
   }
-  const rows = operationsByChannel.filter((r) => platform === "Tất cả" || r.platform === platform);
-  if (rows.length === 0) return { hasData: false, avgCommissionPct: 0, roasBlend: 0 };
+
+  const totalGmv = rows.reduce((s, r) => s + r.gmv, 0);
   const totalPayout = rows.reduce((s, r) => s + r.payout, 0);
-  const totalGmv = rows.reduce((s, r) => s + r.payout * r.roas, 0);
+
+  const weightedAvg = (pick: (r: ChannelOpsMonthly) => number | null) => {
+    const withData = rows.filter((r) => pick(r) != null);
+    const gmvSum = withData.reduce((s, r) => s + r.gmv, 0);
+    if (gmvSum === 0) return null;
+    return withData.reduce((s, r) => s + pick(r)! * r.gmv, 0) / gmvSum;
+  };
+
   return {
     hasData: true,
     avgCommissionPct: totalGmv > 0 ? (totalPayout / totalGmv) * 100 : 0,
-    roasBlend: totalPayout > 0 ? totalGmv / totalPayout : 0,
+    roas: totalPayout > 0 ? totalGmv / totalPayout : 0,
+    completionRatePct: weightedAvg((r) => r.completionRatePct),
+    refundRatePct: weightedAvg((r) => r.refundRatePct),
   };
 }
-
-/** Ví dụ tỷ lệ Hoàn thành / Refund theo Platform × BU — chỉ có dữ liệu thật cho Shopee (từ cột Order Status), Tháng 4/2026. */
-export const ORDER_METRICS_MONTH: MonthKey = "T4";
-
-export const exampleOrderMetrics: Record<string, { completionRatePct: number; refundPct: number }> = {
-  "Shopee-PC": { completionRatePct: 83.3, refundPct: 9.2 }, // 2,431/2,919 đơn Hoàn thành; Refund ÷ Purchase Value
-  "Shopee-MCC": { completionRatePct: 84.4, refundPct: 18.5 }, // 1,409/1,669 đơn Hoàn thành; Refund ÷ Purchase Value
-};
-
-export type ExampleOrderMetrics =
-  | { hasData: true; platformLabel: string; completionRatePct: number; refundPct: number }
-  | { hasData: false };
-
-export function getExampleOrderMetrics(month: MonthKey, platform: PlatformFilter, bu: BuFilter): ExampleOrderMetrics {
-  if (month !== ORDER_METRICS_MONTH) return { hasData: false };
-  const p = platform === "Tất cả" ? "Shopee" : platform;
-  const b = bu === "Tất cả" ? "PC" : bu;
-  const entry = exampleOrderMetrics[`${p}-${b}`];
-  if (!entry) return { hasData: false };
-  return { hasData: true, platformLabel: `${p} ${b}`, ...entry };
-}
-
-/** Fixed-period ops metrics that only exist for Tháng 4/2026 in the current dataset. */
-export const kpiSnapshot = {
-  period: "Tháng 4/2026",
-};
 
 // ---- Tab 2 · Affiliate & Creator ---------------------------------------
 
@@ -336,22 +337,66 @@ export const orderStatusFunnel = [
 // ---- Tab 3 · Vận hành: Payout & ROAS -----------------------------------
 
 /**
- * Payout / Avg Comm / ROAS theo kênh MCC — chỉ có ở Tháng 4/2026 trong dữ liệu hiện tại
- * (nguồn: khối daily riêng theo tháng trong VN RunRate'26 — mới trích xuất cho T4).
+ * GMV / Payout / Avg Comm % / ROAS / Tỷ lệ Hoàn thành / Tỷ lệ Refund theo Platform × BU, từng tháng.
+ * Nguồn: 5 sheet chi tiết giao dịch (VN Shopee PC'26/MCC'26, VN Lazada MCC'26,
+ * (Updated) VN TTS PC'26/MCC'26) — group theo cột Month trên từng dòng đơn hàng.
+ *
+ * - Shopee: payout = Σ "Order Brand Commission to Affiliate(VND)"; completion = GMV đơn "Hoàn thành" ÷ GMV;
+ *   refund = Σ "Refund Value" ÷ GMV.
+ * - TikTok Shop: payout = Σ (Actual Commission Payment + Actual Shop Ads commission payment +
+ *   Actual co-funded creator bonus); completion = GMV đơn Settled/Completed ÷ GMV; refund = GMV có cờ
+ *   "Fully returned or refunded" = Yes ÷ GMV. LƯU Ý: TikTok Shop PC có rất ít đơn đã settle ở các tháng
+ *   đầu (T5, T8) nên ROAS bị đẩy lên rất cao (>400x) — đây là độ trễ ghi nhận hoa hồng, không phải hiệu
+ *   quả thật; đọc completion rate thấp đi kèm để hiểu đúng.
+ * - Lazada: payout = Σ "Est. Spend" (sheet không có cột Order Status/Refund nên completion/refund = null).
+ *
+ * GMV ở bảng này lấy từ sheet chi tiết, có thể lệch nhẹ (~5–15%) so với GMV RunRate'26 dùng ở 4 thẻ
+ * KPI đầu (Tab Tổng quan) — 2 nguồn tổng hợp độc lập, xem mục data-quality trong tài liệu spec.
  */
-export const OPERATIONS_MONTH: MonthKey = "T4";
-
-export const operationsByChannel: {
-  platform: Platform;
-  channel: string;
+export type ChannelOpsMonthly = {
+  gmv: number;
   payout: number;
-  avgCommPct: number;
+  avgCommissionPct: number;
   roas: number;
-}[] = [
-  { platform: "Shopee", channel: "Shopee MCC", payout: 7_774_018, avgCommPct: 3.84, roas: 26.04 },
-  { platform: "Lazada", channel: "Lazada MCC", payout: 387_119, avgCommPct: 6.82, roas: 14.66 },
-  { platform: "TikTok Shop", channel: "TikTok MCC", payout: 15_428_070, avgCommPct: 5.92, roas: 16.9 },
-];
+  completionRatePct: number | null;
+  refundRatePct: number | null;
+};
+
+export const monthlyChannelOps: Partial<Record<MonthKey, Record<string, ChannelOpsMonthly>>> = {
+  T4: {
+    "Shopee-MCC": { gmv: 174_403_824, payout: 7_774_018, avgCommissionPct: 4.46, roas: 22.43, completionRatePct: 98.11, refundRatePct: 16.09 },
+    "Lazada-MCC": { gmv: 5_673_749, payout: 387_119, avgCommissionPct: 6.82, roas: 14.66, completionRatePct: null, refundRatePct: null },
+    "TikTok Shop-MCC": { gmv: 262_436_197, payout: 9_812_073, avgCommissionPct: 3.74, roas: 26.75, completionRatePct: 66.61, refundRatePct: 3.58 },
+  },
+  T5: {
+    "Shopee-PC": { gmv: 140_476_725, payout: 10_471_800, avgCommissionPct: 7.45, roas: 13.41, completionRatePct: 100, refundRatePct: 8.82 },
+    "Shopee-MCC": { gmv: 199_298_108, payout: 10_005_880, avgCommissionPct: 5.02, roas: 19.92, completionRatePct: 100, refundRatePct: 18.04 },
+    "Lazada-MCC": { gmv: 7_710_500, payout: 631_056, avgCommissionPct: 8.18, roas: 12.22, completionRatePct: null, refundRatePct: null },
+    "TikTok Shop-PC": { gmv: 40_394_700, payout: 98_665, avgCommissionPct: 0.24, roas: 409.41, completionRatePct: 52.80, refundRatePct: 0 },
+    "TikTok Shop-MCC": { gmv: 293_051_097, payout: 11_726_827, avgCommissionPct: 4.00, roas: 24.99, completionRatePct: 65.20, refundRatePct: 1.62 },
+  },
+  T6: {
+    "Shopee-PC": { gmv: 444_695_013, payout: 28_459_400, avgCommissionPct: 6.40, roas: 15.63, completionRatePct: 100, refundRatePct: 5.85 },
+    "Shopee-MCC": { gmv: 301_532_576, payout: 17_369_030, avgCommissionPct: 5.76, roas: 17.36, completionRatePct: 100, refundRatePct: 19.24 },
+    "Lazada-MCC": { gmv: 8_088_200, payout: 675_880, avgCommissionPct: 8.36, roas: 11.97, completionRatePct: null, refundRatePct: null },
+    "TikTok Shop-PC": { gmv: 176_748_078, payout: 1_534_282, avgCommissionPct: 0.87, roas: 115.20, completionRatePct: 55.16, refundRatePct: 0.42 },
+    "TikTok Shop-MCC": { gmv: 697_930_711, payout: 14_868_617, avgCommissionPct: 2.13, roas: 46.94, completionRatePct: 33.33, refundRatePct: 1.25 },
+  },
+  T7: {
+    "Shopee-PC": { gmv: 1_188_785_180, payout: 70_182_820, avgCommissionPct: 5.90, roas: 16.94, completionRatePct: 95.53, refundRatePct: 10.48 },
+    "Shopee-MCC": { gmv: 302_738_982, payout: 19_784_990, avgCommissionPct: 6.54, roas: 15.30, completionRatePct: 97.08, refundRatePct: 25.24 },
+    "Lazada-MCC": { gmv: 7_305_800, payout: 603_270, avgCommissionPct: 8.26, roas: 12.11, completionRatePct: null, refundRatePct: null },
+    "TikTok Shop-PC": { gmv: 431_603_985, payout: 5_415_814, avgCommissionPct: 1.25, roas: 79.69, completionRatePct: 35.33, refundRatePct: 0.43 },
+    "TikTok Shop-MCC": { gmv: 415_823_762, payout: 19_490_003, avgCommissionPct: 4.69, roas: 21.34, completionRatePct: 65.81, refundRatePct: 1.70 },
+  },
+  T8: {
+    "Shopee-PC": { gmv: 742_466_600, payout: 42_984_660, avgCommissionPct: 5.79, roas: 17.27, completionRatePct: 74.52, refundRatePct: 9.33 },
+    "Shopee-MCC": { gmv: 185_073_955, payout: 11_824_800, avgCommissionPct: 6.39, roas: 15.65, completionRatePct: 60.71, refundRatePct: 9.21 },
+    "Lazada-MCC": { gmv: 546_700, payout: 45_000, avgCommissionPct: 8.23, roas: 12.15, completionRatePct: null, refundRatePct: null },
+    "TikTok Shop-PC": { gmv: 265_354_914, payout: 38_229, avgCommissionPct: 0.01, roas: 6941.19, completionRatePct: 0.25, refundRatePct: 0 },
+    "TikTok Shop-MCC": { gmv: 158_096_952, payout: 3_601_560, avgCommissionPct: 2.28, roas: 43.90, completionRatePct: 27.52, refundRatePct: 0.64 },
+  },
+};
 
 export const platformColor: Record<Platform, string> = {
   Shopee: "var(--color-s-shopee)",
