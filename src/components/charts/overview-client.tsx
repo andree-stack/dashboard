@@ -5,23 +5,49 @@ import { useFilters } from "@/components/filter-context";
 import { GroupedBuBar } from "@/components/charts/grouped-bar";
 import { BarList } from "@/components/charts/bar-list";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
-import { PLATFORMS, monthlyPlatformBu, MONTHS, getMonthlyKpi, kpiSnapshot } from "@/lib/data";
+import {
+  PLATFORMS,
+  monthlyPlatformBu,
+  MONTHS,
+  getFilteredKpi,
+  getFilteredOperations,
+  getExampleOrderMetrics,
+  kpiSnapshot,
+} from "@/lib/data";
 import { formatPercent, formatVnd, statusForAchievement } from "@/lib/utils";
 
 export function KpiRowClient() {
-  const { month } = useFilters();
-  const k = getMonthlyKpi(month);
+  const { month, platform, bu } = useFilters();
+  const k = getFilteredKpi(month, platform, bu);
+  const ops = getFilteredOperations(platform, bu);
+  const orderStats = getExampleOrderMetrics(platform, bu);
   const achTone = k.achievementPct != null ? statusForAchievement(k.achievementPct) : null;
+
+  const scopeLabel = [platform !== "Tất cả" ? platform : null, bu !== "Tất cả" ? bu : null]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <>
       <KpiRow>
         <KpiCard
           label="GMV toàn kênh"
-          value={k.hasActual ? formatVnd(k.gmvActual!) : "—"}
-          foot={k.isMtd ? `${k.label} · số MTD` : k.hasActual ? k.label : `${k.label} · chưa diễn ra`}
+          value={!k.hasChannels ? "—" : k.hasActual ? formatVnd(k.gmvActual!) : "—"}
+          foot={
+            !k.hasChannels
+              ? `${k.label} · không có kênh khớp bộ lọc`
+              : k.isMtd
+              ? `${k.label} · số MTD`
+              : k.hasActual
+              ? k.label
+              : `${k.label} · chưa diễn ra`
+          }
         />
-        <KpiCard label="Target GMV" value={formatVnd(k.gmvTarget)} foot={k.label} />
+        <KpiCard
+          label="Target GMV"
+          value={k.hasChannels && k.gmvTarget > 0 ? formatVnd(k.gmvTarget) : "—"}
+          foot={k.label}
+        />
         <KpiCard
           label="% Đạt Target"
           value={k.achievementPct != null ? formatPercent(k.achievementPct) : "—"}
@@ -37,31 +63,40 @@ export function KpiRowClient() {
           toneLabel={k.momGrowthPct != null ? (k.momGrowthPct >= 0 ? "▲ tốt" : "▼ giảm") : undefined}
         />
         <KpiCard
-          label="Avg Commission % (blend)"
-          value={formatPercent(kpiSnapshot.avgCommissionPct, 2)}
-          foot={`${kpiSnapshot.period} · 3 kênh MCC`}
+          label="Avg Commission %"
+          value={ops.hasData ? formatPercent(ops.avgCommissionPct, 2) : "—"}
+          foot={ops.hasData ? `${kpiSnapshot.period}${scopeLabel ? " · " + scopeLabel : " · 3 kênh MCC"}` : `${kpiSnapshot.period} · không có dữ liệu cho bộ lọc này`}
         />
         <KpiCard
-          label="ROAS toàn kênh (blend)"
-          value={`${kpiSnapshot.roasBlend.toFixed(1)}x`}
-          foot={kpiSnapshot.period}
+          label="ROAS"
+          value={ops.hasData ? `${ops.roasBlend.toFixed(1)}x` : "—"}
+          foot={ops.hasData ? `${kpiSnapshot.period}${scopeLabel ? " · " + scopeLabel : ""}` : `${kpiSnapshot.period} · không có dữ liệu cho bộ lọc này`}
         />
         <KpiCard
           label="Tỷ lệ đơn Hoàn thành"
-          value={formatPercent(kpiSnapshot.completionRatePct)}
-          foot={`ví dụ Shopee PC · ${kpiSnapshot.period}`}
+          value={orderStats.hasData ? formatPercent(orderStats.completionRatePct) : "—"}
+          foot={
+            orderStats.hasData
+              ? `ví dụ ${orderStats.platformLabel} · ${kpiSnapshot.period}`
+              : "chưa có dữ liệu mẫu cho kênh này"
+          }
         />
         <KpiCard
           label="Tỷ lệ hoàn (Refund)"
-          value={formatPercent(kpiSnapshot.refundPct)}
-          tone="good"
-          toneLabel="thấp"
-          foot={`ví dụ Shopee PC · ${kpiSnapshot.period}`}
+          value={orderStats.hasData ? formatPercent(orderStats.refundPct) : "—"}
+          tone={orderStats.hasData ? "good" : undefined}
+          toneLabel={orderStats.hasData ? "thấp" : undefined}
+          foot={
+            orderStats.hasData
+              ? `ví dụ ${orderStats.platformLabel} · ${kpiSnapshot.period}`
+              : "chưa có dữ liệu mẫu cho kênh này"
+          }
         />
       </KpiRow>
       <p className="mt-2 text-[11.5px] text-ink-3">
-        4 thẻ đầu cập nhật theo tháng đang chọn (nguồn: VN RunRate&apos;26). 4 thẻ sau cố định theo{" "}
-        {kpiSnapshot.period} — dữ liệu vận hành chi tiết hiện chỉ trích xuất cho tháng này.
+        4 thẻ đầu cập nhật theo Tháng + Platform + BU đang chọn (nguồn: VN RunRate&apos;26). 4 thẻ
+        sau lọc theo Platform/BU trong phạm vi dữ liệu vận hành chi tiết — hiện chỉ có cho{" "}
+        {kpiSnapshot.period} (Payout/ROAS: 3 kênh MCC · Hoàn thành/Refund: Shopee PC &amp; MCC).
       </p>
     </>
   );

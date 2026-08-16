@@ -162,36 +162,82 @@ export const monthlyPlatformBu: Record<
   ],
 };
 
-export function getMonthlyKpi(month: MonthKey) {
-  const idx = monthlyTrend.findIndex((m) => m.month === month);
-  const row = monthlyTrend[idx];
-  const prev = idx > 0 ? monthlyTrend[idx - 1] : null;
+function filteredActualTotal(rows: { actual: number | null }[]): number | null {
+  return rows.every((r) => r.actual != null) ? rows.reduce((s, r) => s + (r.actual ?? 0), 0) : null;
+}
 
-  const achievementPct = row.target > 0 && row.actual != null ? (row.actual / row.target) * 100 : null;
-  const momGrowthPct =
-    prev && prev.actual != null && prev.actual !== 0 && row.actual != null
-      ? ((row.actual - prev.actual) / prev.actual) * 100
-      : null;
+/**
+ * GMV/Target/%/MoM cho đúng bộ lọc Platform × BU đang chọn, không chỉ tổng công ty.
+ * Dùng monthlyPlatformBu (đã đối chiếu khớp monthlyTrend khi platform=bu="Tất cả").
+ */
+export function getFilteredKpi(month: MonthKey, platform: PlatformFilter, bu: BuFilter) {
+  const idx = MONTHS.findIndex((m) => m.key === month);
+  const matches = (r: { platform: Platform; bu: BU }) =>
+    (platform === "Tất cả" || r.platform === platform) && (bu === "Tất cả" || r.bu === bu);
+
+  const rows = monthlyPlatformBu[month].filter(matches);
+  const gmvTarget = rows.reduce((s, r) => s + r.target, 0);
+  const gmvActual = filteredActualTotal(rows);
+
+  const achievementPct = gmvActual != null && gmvTarget > 0 ? (gmvActual / gmvTarget) * 100 : null;
+
+  let momGrowthPct: number | null = null;
+  if (idx > 0) {
+    const prevRows = monthlyPlatformBu[MONTHS[idx - 1].key].filter(matches);
+    const prevActual = filteredActualTotal(prevRows);
+    if (prevActual != null && prevActual !== 0 && gmvActual != null) {
+      momGrowthPct = ((gmvActual - prevActual) / prevActual) * 100;
+    }
+  }
 
   return {
     month,
     label: MONTHS[idx].label,
-    gmvActual: row.actual,
-    gmvTarget: row.target,
+    gmvActual,
+    gmvTarget,
     achievementPct,
     momGrowthPct,
-    isMtd: row.isMtd,
-    hasActual: row.actual != null,
+    isMtd: monthlyTrend[idx].isMtd,
+    hasActual: gmvActual != null,
+    hasChannels: rows.length > 0,
   };
+}
+
+/** Payout/Avg Comm/ROAS cho đúng bộ lọc Platform, trong phạm vi operationsByChannel (Tháng 4/2026, chỉ có MCC). */
+export function getFilteredOperations(platform: PlatformFilter, bu: BuFilter) {
+  if (bu === "PC") return { hasData: false, avgCommissionPct: 0, roasBlend: 0 };
+  const rows = operationsByChannel.filter((r) => platform === "Tất cả" || r.platform === platform);
+  if (rows.length === 0) return { hasData: false, avgCommissionPct: 0, roasBlend: 0 };
+  const totalPayout = rows.reduce((s, r) => s + r.payout, 0);
+  const totalGmv = rows.reduce((s, r) => s + r.payout * r.roas, 0);
+  return {
+    hasData: true,
+    avgCommissionPct: totalGmv > 0 ? (totalPayout / totalGmv) * 100 : 0,
+    roasBlend: totalPayout > 0 ? totalGmv / totalPayout : 0,
+  };
+}
+
+/** Ví dụ tỷ lệ Hoàn thành / Refund theo Platform × BU — chỉ có dữ liệu thật cho Shopee (từ cột Order Status). */
+export const exampleOrderMetrics: Record<string, { completionRatePct: number; refundPct: number }> = {
+  "Shopee-PC": { completionRatePct: 83.3, refundPct: 9.2 }, // 2,431/2,919 đơn Hoàn thành; Refund ÷ Purchase Value
+  "Shopee-MCC": { completionRatePct: 84.4, refundPct: 18.5 }, // 1,409/1,669 đơn Hoàn thành; Refund ÷ Purchase Value
+};
+
+export type ExampleOrderMetrics =
+  | { hasData: true; platformLabel: string; completionRatePct: number; refundPct: number }
+  | { hasData: false };
+
+export function getExampleOrderMetrics(platform: PlatformFilter, bu: BuFilter): ExampleOrderMetrics {
+  const p = platform === "Tất cả" ? "Shopee" : platform;
+  const b = bu === "Tất cả" ? "PC" : bu;
+  const entry = exampleOrderMetrics[`${p}-${b}`];
+  if (!entry) return { hasData: false };
+  return { hasData: true, platformLabel: `${p} ${b}`, ...entry };
 }
 
 /** Fixed-period ops metrics that only exist for Tháng 4/2026 in the current dataset. */
 export const kpiSnapshot = {
   period: "Tháng 4/2026",
-  avgCommissionPct: 5.03,
-  roasBlend: 19.9,
-  completionRatePct: 83.3, // Shopee PC — 2,431 / 2,919 orders
-  refundPct: 9.2, // Shopee PC — Refund Value ÷ Purchase Value
 };
 
 // ---- Tab 2 · Affiliate & Creator ---------------------------------------
