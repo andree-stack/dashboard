@@ -203,9 +203,15 @@ export function getFilteredKpi(month: MonthKey, platform: PlatformFilter, bu: Bu
   };
 }
 
-/** Payout/Avg Comm/ROAS cho đúng bộ lọc Platform, trong phạm vi operationsByChannel (Tháng 4/2026, chỉ có MCC). */
-export function getFilteredOperations(platform: PlatformFilter, bu: BuFilter) {
-  if (bu === "PC") return { hasData: false, avgCommissionPct: 0, roasBlend: 0 };
+/**
+ * Payout/Avg Comm/ROAS cho đúng bộ lọc Platform, trong phạm vi operationsByChannel.
+ * Dữ liệu này CHỈ trích xuất cho OPERATIONS_MONTH (Tháng 4/2026) — nếu tháng đang chọn
+ * khác tháng đó, trả về hasData:false thay vì lẫn số liệu giữa 2 tháng khác nhau.
+ */
+export function getFilteredOperations(month: MonthKey, platform: PlatformFilter, bu: BuFilter) {
+  if (month !== OPERATIONS_MONTH || bu === "PC") {
+    return { hasData: false, avgCommissionPct: 0, roasBlend: 0 };
+  }
   const rows = operationsByChannel.filter((r) => platform === "Tất cả" || r.platform === platform);
   if (rows.length === 0) return { hasData: false, avgCommissionPct: 0, roasBlend: 0 };
   const totalPayout = rows.reduce((s, r) => s + r.payout, 0);
@@ -217,7 +223,9 @@ export function getFilteredOperations(platform: PlatformFilter, bu: BuFilter) {
   };
 }
 
-/** Ví dụ tỷ lệ Hoàn thành / Refund theo Platform × BU — chỉ có dữ liệu thật cho Shopee (từ cột Order Status). */
+/** Ví dụ tỷ lệ Hoàn thành / Refund theo Platform × BU — chỉ có dữ liệu thật cho Shopee (từ cột Order Status), Tháng 4/2026. */
+export const ORDER_METRICS_MONTH: MonthKey = "T4";
+
 export const exampleOrderMetrics: Record<string, { completionRatePct: number; refundPct: number }> = {
   "Shopee-PC": { completionRatePct: 83.3, refundPct: 9.2 }, // 2,431/2,919 đơn Hoàn thành; Refund ÷ Purchase Value
   "Shopee-MCC": { completionRatePct: 84.4, refundPct: 18.5 }, // 1,409/1,669 đơn Hoàn thành; Refund ÷ Purchase Value
@@ -227,7 +235,8 @@ export type ExampleOrderMetrics =
   | { hasData: true; platformLabel: string; completionRatePct: number; refundPct: number }
   | { hasData: false };
 
-export function getExampleOrderMetrics(platform: PlatformFilter, bu: BuFilter): ExampleOrderMetrics {
+export function getExampleOrderMetrics(month: MonthKey, platform: PlatformFilter, bu: BuFilter): ExampleOrderMetrics {
+  if (month !== ORDER_METRICS_MONTH) return { hasData: false };
   const p = platform === "Tất cả" ? "Shopee" : platform;
   const b = bu === "Tất cả" ? "PC" : bu;
   const entry = exampleOrderMetrics[`${p}-${b}`];

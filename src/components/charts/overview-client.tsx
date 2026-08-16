@@ -13,19 +13,26 @@ import {
   getFilteredOperations,
   getExampleOrderMetrics,
   kpiSnapshot,
+  OPERATIONS_MONTH,
 } from "@/lib/data";
 import { formatPercent, formatVnd, statusForAchievement } from "@/lib/utils";
 
 export function KpiRowClient() {
   const { month, platform, bu } = useFilters();
   const k = getFilteredKpi(month, platform, bu);
-  const ops = getFilteredOperations(platform, bu);
-  const orderStats = getExampleOrderMetrics(platform, bu);
+  const ops = getFilteredOperations(month, platform, bu);
+  const orderStats = getExampleOrderMetrics(month, platform, bu);
   const achTone = k.achievementPct != null ? statusForAchievement(k.achievementPct) : null;
 
   const scopeLabel = [platform !== "Tất cả" ? platform : null, bu !== "Tất cả" ? bu : null]
     .filter(Boolean)
     .join(" ");
+  // Phân biệt 2 lý do "không có dữ liệu": sai tháng, hay đúng tháng nhưng bộ lọc
+  // Platform/BU không khớp mẫu dữ liệu hiện có (vd BU=PC, hoặc Lazada/TikTok Shop).
+  const noDataNote =
+    month !== OPERATIONS_MONTH
+      ? `chỉ có dữ liệu cho ${kpiSnapshot.period} — đang xem ${MONTHS.find((m) => m.key === month)?.label}`
+      : `${kpiSnapshot.period} · không có dữ liệu mẫu cho ${scopeLabel || "bộ lọc này"}`;
 
   return (
     <>
@@ -65,12 +72,12 @@ export function KpiRowClient() {
         <KpiCard
           label="Avg Commission %"
           value={ops.hasData ? formatPercent(ops.avgCommissionPct, 2) : "—"}
-          foot={ops.hasData ? `${kpiSnapshot.period}${scopeLabel ? " · " + scopeLabel : " · 3 kênh MCC"}` : `${kpiSnapshot.period} · không có dữ liệu cho bộ lọc này`}
+          foot={ops.hasData ? `${kpiSnapshot.period}${scopeLabel ? " · " + scopeLabel : " · 3 kênh MCC"}` : noDataNote}
         />
         <KpiCard
           label="ROAS"
           value={ops.hasData ? `${ops.roasBlend.toFixed(1)}x` : "—"}
-          foot={ops.hasData ? `${kpiSnapshot.period}${scopeLabel ? " · " + scopeLabel : ""}` : `${kpiSnapshot.period} · không có dữ liệu cho bộ lọc này`}
+          foot={ops.hasData ? `${kpiSnapshot.period}${scopeLabel ? " · " + scopeLabel : ""}` : noDataNote}
         />
         <KpiCard
           label="Tỷ lệ đơn Hoàn thành"
@@ -78,7 +85,7 @@ export function KpiRowClient() {
           foot={
             orderStats.hasData
               ? `ví dụ ${orderStats.platformLabel} · ${kpiSnapshot.period}`
-              : "chưa có dữ liệu mẫu cho kênh này"
+              : noDataNote
           }
         />
         <KpiCard
@@ -89,7 +96,7 @@ export function KpiRowClient() {
           foot={
             orderStats.hasData
               ? `ví dụ ${orderStats.platformLabel} · ${kpiSnapshot.period}`
-              : "chưa có dữ liệu mẫu cho kênh này"
+              : noDataNote
           }
         />
       </KpiRow>
