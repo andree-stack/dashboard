@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Activity, FolderClock, LogOut } from "lucide-react";
+import { LayoutDashboard, CalendarRange, Users, Activity, FolderClock, LogOut } from "lucide-react";
 import { signOutAction } from "@/app/actions";
 
 const tabs = [
   { href: "/overview", label: "Tổng quan", icon: LayoutDashboard },
+  { href: "/weekly", label: "Weekly", icon: CalendarRange },
   { href: "/affiliate", label: "Affiliate & Creator", icon: Users },
   { href: "/operations", label: "Vận hành", icon: Activity },
   { href: "/content", label: "Content & Chiến dịch", icon: FolderClock },

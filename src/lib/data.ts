@@ -206,7 +206,7 @@ export function getFilteredKpi(month: MonthKey, platform: PlatformFilter, bu: Bu
 export type TrendSeriesDef = { key: string; label: string; color: string };
 export type TrendRow = { month: MonthKey; isMtd: boolean; target: number } & Record<string, number | null | string | boolean>;
 
-const BU_COLOR: Record<BU, string> = { PC: "var(--color-s-shopee)", MCC: "var(--color-s-tts)" };
+export const BU_COLOR: Record<BU, string> = { PC: "var(--color-s-shopee)", MCC: "var(--color-s-tts)" };
 
 /**
  * Series cho biểu đồ trend, tách theo đúng những gì bộ lọc Platform/BU đang cho qua:
