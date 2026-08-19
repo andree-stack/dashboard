@@ -203,6 +203,54 @@ export function getFilteredKpi(month: MonthKey, platform: PlatformFilter, bu: Bu
   };
 }
 
+export type TrendSeriesDef = { key: string; label: string; color: string };
+export type TrendRow = { month: MonthKey; isMtd: boolean; target: number } & Record<string, number | null | string | boolean>;
+
+const BU_COLOR: Record<BU, string> = { PC: "var(--color-s-shopee)", MCC: "var(--color-s-tts)" };
+
+/**
+ * Series cho biểu đồ trend, tách theo đúng những gì bộ lọc Platform/BU đang cho qua:
+ * - Platform=Tất cả (bất kể BU): tách theo Platform (Shopee/Lazada/TikTok Shop) — 3 line.
+ * - Platform cụ thể, BU=Tất cả: tách theo BU (PC/MCC) — 2 line.
+ * - Platform + BU cụ thể: 1 line duy nhất (đúng kênh đang chọn).
+ * Target luôn là 1 đường nét đứt duy nhất = tổng target trong phạm vi đang lọc (khớp thẻ
+ * "Target GMV" ở KPI row), để không bị rối mắt khi tách nhiều line thực tế.
+ */
+export function getTrendSeries(platform: PlatformFilter, bu: BuFilter): { series: TrendSeriesDef[]; rows: TrendRow[] } {
+  const singleChannel = platform !== "Tất cả" && bu !== "Tất cả";
+  const splitByPlatform = platform === "Tất cả";
+
+  const series: TrendSeriesDef[] = singleChannel
+    ? [{ key: "value", label: `${platform} ${bu}`, color: platformColor[platform as Platform] }]
+    : splitByPlatform
+    ? PLATFORMS.map((p) => ({ key: p, label: p, color: platformColor[p] }))
+    : (["PC", "MCC"] as BU[]).map((b) => ({ key: b, label: b, color: BU_COLOR[b] }));
+
+  const rows: TrendRow[] = MONTHS.map((m) => {
+    const monthRows = monthlyPlatformBu[m.key].filter(
+      (r) => (platform === "Tất cả" || r.platform === platform) && (bu === "Tất cả" || r.bu === bu)
+    );
+    const row: TrendRow = {
+      month: m.key,
+      isMtd: monthlyTrend[MONTHS.findIndex((x) => x.key === m.key)].isMtd,
+      target: monthRows.reduce((s, r) => s + r.target, 0),
+    };
+
+    if (singleChannel) {
+      row.value = filteredActualTotal(monthRows);
+    } else {
+      const groupKeys = splitByPlatform ? PLATFORMS : (["PC", "MCC"] as BU[]);
+      for (const key of groupKeys) {
+        const rs = monthRows.filter((r) => (splitByPlatform ? r.platform === key : r.bu === key));
+        row[key] = rs.length > 0 ? filteredActualTotal(rs) : null;
+      }
+    }
+    return row;
+  });
+
+  return { series, rows };
+}
+
 export type ChannelOpsResult = {
   hasData: boolean; // true nếu có ít nhất 1 kênh khớp bộ lọc trong tháng này
   avgCommissionPct: number;
