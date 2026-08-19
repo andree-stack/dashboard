@@ -4,6 +4,8 @@ import {
   KpiRowClient,
   PlatformBuSection,
   TargetAchievementSection,
+  MonthlyContentBreakdownSection,
+  MonthlyChannelTable,
 } from "@/components/charts/overview-client";
 
 export default function OverviewPage() {
@@ -56,6 +58,35 @@ export default function OverviewPage() {
           </CardFootnote>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title="GMV theo Content Type / Kênh traffic"
+          kind="Bar list"
+          desc="Tháng đang chọn, so với tháng trước. Shopee: Kênh traffic (Facebook/Websites/Shopee Video/Shopee Live/Khác). TikTok Shop: Content Type (Video/External Traffic/Showcase/Livestream/Khác)."
+        />
+        <MonthlyContentBreakdownSection />
+        <CardFootnote>
+          Lazada không có cột tương đương trong sheet nguồn nên không hiện ở đây. Shopee gộp ~20
+          giá trị Channel gốc về 4 nhóm chính + &quot;Khác&quot; để nhất quán qua các tháng — di
+          chuột vào &quot;Khác&quot; để xem chi tiết từng kênh gốc bên trong.
+        </CardFootnote>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="So sánh chi tiết theo kênh"
+          kind="Table"
+          desc="Luôn hiện đủ 6 tổ hợp Platform × BU khớp bộ lọc — kênh chưa có dữ liệu tháng này hiện “—”."
+        />
+        <MonthlyChannelTable />
+        <CardFootnote>
+          So sánh với tháng liền trước (MoM) — không có &quot;so cùng tháng năm trước&quot; vì dữ
+          liệu nguồn chỉ có 1 năm. Lazada không có cột Order Status/Refund nên Hoàn thành/Refund
+          luôn để trống cho kênh đó; Lazada PC hiện chưa vận hành nên luôn “—”. ROAS = GMV ÷ Payout
+          của đúng tháng đang xem, không phải trung bình.
+        </CardFootnote>
+      </Card>
     </div>
   );
 }

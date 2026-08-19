@@ -1,0 +1,108 @@
+// Content Type / Kênh traffic theo THÁNG — bản clone của weekly-content-data.ts cho tab Tổng quan,
+// cùng nguồn (5 sheet chi tiết) và cùng cách bucketize (top-4 + "Khác" giữ chi tiết gốc cho
+// tooltip), chỉ khác group theo Tháng (T4–T8) thay vì theo Tuần. Lazada không có cột tương đương.
+import type { BU, BuFilter, MonthKey, PlatformFilter } from "./data";
+
+type ContentPlatform = "Shopee" | "TikTok Shop";
+
+export const monthlyContentRaw: Record<
+  "Shopee" | "TikTok Shop",
+  Partial<Record<BU, Partial<Record<MonthKey, Record<string, number>>>>>
+> = {
+  "Shopee": {
+    PC: {
+      T5: { "Facebook": 36201588, "Others": 33788033, "Websites": 30758170, "Shopee Video": 21383224, "Google Search": 3492540, "Zalo": 3449994, "YouTube": 2555000, "Code Sharing": 2109607, "Threads": 2044000, "Shopee Live": 1769989, "Instagram": 1557129, "KAKAOTALK": 786180, "Telegram": 581271 },
+      T6: { "Others": 113833107, "Facebook": 93771464, "Shopee Video": 91364809, "Websites": 81544502, "Shopee Live": 22645530, "Instagram": 19000794, "Google Search": 7845040, "Zalo": 4822813, "ShopbackApp": 4164026, "YouTube": 1680409, "EdgeBrowser": 1165600, "Pinterest": 1165600, "TikTok": 624019, "Threads": 604000, "Twitter": 463300 },
+      T7: { "Facebook": 286672253, "Shopee Live": 228704169, "Websites": 218306947, "Shopee Video": 209275816, "Others": 157483480, "Zalo": 27883514, "Instagram": 19363755, "TikTok": 9461603, "ShopbackApp": 8862623, "Google Search": 7053515, "YouTube": 5470367, "Code Sharing": 4976972, "Capcut": 1901488, "Twitter": 1610892, "Messenger": 738720, "EdgeBrowser": 377522, "Pinterest": 350484, "FreeTube": 291060 },
+      T8: { "Websites": 179229592, "Facebook": 175678981, "Shopee Video": 131106134, "Others": 110086902, "Shopee Live": 60789602, "Zalo": 21050828, "Google Search": 18147894, "Instagram": 15110443, "ShopbackApp": 12513206, "YouTube": 8817941, "TikTok": 6927817, "Code Sharing": 1187502, "Capcut": 779760, "Twitter": 692550, "Trassion": 347448 },
+    },
+    MCC: {
+      T4: { "Facebook": 45104519, "Shopee Live": 34619960, "Websites": 31081741, "Others": 24879133, "Shopee Video": 23180611, "Instagram": 6132281, "ShopbackApp": 5021978, "Zalo": 2342662, "Twitter": 1830906, "Google Search": 210033 },
+      T5: { "Facebook": 77173687, "Shopee Video": 27458455, "Others": 27403514, "Shopee Live": 23910031, "Websites": 22123315, "ShopbackApp": 10532838, "Instagram": 7193026, "Twitter": 2399200, "Zalo": 659466, "Google Search": 231376, "Code Sharing": 213200 },
+      T6: { "Facebook": 87616113, "Others": 54409321, "Websites": 53823898, "Shopee Live": 40787237, "Shopee Video": 33912319, "Zalo": 10271589, "ShopbackApp": 8713859, "TikTok": 3507134, "Google Search": 3238811, "Instagram": 2903092, "Code Sharing": 1015540, "YouTube": 866193, "Threads": 248170, "WhatsApp": 219300 },
+      T7: { "Shopee Live": 80506992, "Facebook": 77975252, "Websites": 51493341, "Shopee Video": 40933688, "Others": 28317524, "Zalo": 6834741, "Instagram": 6672330, "YouTube": 5129259, "Code Sharing": 2246218, "Messenger": 1369544, "ShopbackApp": 1260093 },
+      T8: { "Facebook": 67601947, "Websites": 47639100, "Shopee Video": 20835046, "Shopee Live": 17475578, "Others": 14915796, "Zalo": 5314912, "ShopbackApp": 3428815, "Instagram": 3003988, "TikTok": 1643527, "Code Sharing": 1387074, "Threads": 918521, "Google Search": 476271, "YouTube": 433380 },
+    },
+  },
+  "TikTok Shop": {
+    PC: {
+      T5: { "(Không có Content Type)": 38933000, "External Traffic": 1461700 },
+      T6: { "(Không có Content Type)": 89458000, "Video": 62975303, "External Traffic": 19330165, "Showcase": 4984610 },
+      T7: { "(Không có Content Type)": 197266140, "External Traffic": 93319750, "Video": 75430758, "Showcase": 65587337 },
+      T8: { "(Không có Content Type)": 165436624, "External Traffic": 55959164, "Video": 42040192, "Showcase": 1918934 },
+    },
+    MCC: {
+      T4: { "Video": 116046743, "External Traffic": 64651238, "(Không có Content Type)": 47250731, "Showcase": 30941426, "Livestream": 3546059 },
+      T5: { "Video": 120193524, "External Traffic": 59828817, "(Không có Content Type)": 53775861, "Showcase": 47814061, "Livestream": 11438834 },
+      T6: { "(Không có Content Type)": 347333442, "Video": 171432533, "External Traffic": 104092208, "Showcase": 62808210, "Livestream": 12264318 },
+      T7: { "Video": 168850671, "(Không có Content Type)": 95065450, "External Traffic": 89090656, "Showcase": 61298461, "Livestream": 1518524 },
+      T8: { "Video": 59722226, "External Traffic": 48741758, "(Không có Content Type)": 23112833, "Showcase": 14019325, "Livestream": 12500810 },
+    },
+  },
+};
+
+const SHOPEE_MAIN_LABELS = ["Facebook", "Websites", "Shopee Video", "Shopee Live"];
+const TTS_MAIN_LABELS = ["Video", "External Traffic", "Showcase", "Livestream"];
+
+export type ContentDetailItem = { label: string; gmv: number };
+export type ContentBreakdownItem = { label: string; gmv: number; detail?: ContentDetailItem[] };
+export type PlatformContentBreakdown = {
+  platform: ContentPlatform;
+  dimensionLabel: string;
+  items: ContentBreakdownItem[];
+  hasData: boolean;
+};
+
+function sumRaw(platform: ContentPlatform, busToSum: BU[], month: MonthKey): Record<string, number> {
+  const totals: Record<string, number> = {};
+  for (const b of busToSum) {
+    const monthData = monthlyContentRaw[platform]?.[b]?.[month];
+    if (!monthData) continue;
+    for (const [label, gmv] of Object.entries(monthData)) {
+      totals[label] = (totals[label] ?? 0) + gmv;
+    }
+  }
+  return totals;
+}
+
+function bucketize(raw: Record<string, number>, mainLabels: string[]): ContentBreakdownItem[] {
+  const items: ContentBreakdownItem[] = [];
+  let khacGmv = 0;
+  const khacDetail: ContentDetailItem[] = [];
+
+  for (const label of mainLabels) {
+    if (raw[label] != null) items.push({ label, gmv: raw[label] });
+  }
+  for (const [label, gmv] of Object.entries(raw)) {
+    if (!mainLabels.includes(label)) {
+      khacGmv += gmv;
+      khacDetail.push({ label, gmv });
+    }
+  }
+  if (khacDetail.length > 0) {
+    khacDetail.sort((a, b) => b.gmv - a.gmv);
+    items.push({ label: "Khác", gmv: khacGmv, detail: khacDetail });
+  }
+  return items.sort((a, b) => b.gmv - a.gmv);
+}
+
+/**
+ * Breakdown GMV theo Content Type (TikTok Shop) / Kênh traffic (Shopee) cho tháng + bộ lọc
+ * Platform/BU đang chọn. Lazada không có cột tương đương nên không xuất hiện trong danh sách.
+ */
+export function getMonthlyContentBreakdown(
+  month: MonthKey,
+  platform: PlatformFilter,
+  bu: BuFilter
+): PlatformContentBreakdown[] {
+  const platforms: ContentPlatform[] =
+    platform === "Tất cả" ? ["Shopee", "TikTok Shop"] : platform === "Lazada" ? [] : [platform];
+  const busToSum: BU[] = bu === "Tất cả" ? ["PC", "MCC"] : [bu];
+
+  return platforms.map((p) => {
+    const dimensionLabel = p === "Shopee" ? "Kênh traffic" : "Content Type";
+    const mainLabels = p === "Shopee" ? SHOPEE_MAIN_LABELS : TTS_MAIN_LABELS;
+    const items = bucketize(sumRaw(p, busToSum, month), mainLabels);
+    return { platform: p, dimensionLabel, items, hasData: items.length > 0 };
+  });
+}

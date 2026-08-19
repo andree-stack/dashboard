@@ -1,12 +1,40 @@
 "use client";
 
 import { useMemo } from "react";
+import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { useFilters } from "@/components/filter-context";
 import { GroupedBuBar } from "@/components/charts/grouped-bar";
 import { BarList } from "@/components/charts/bar-list";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
-import { PLATFORMS, monthlyPlatformBu, MONTHS, getFilteredKpi, getChannelOps } from "@/lib/data";
-import { formatPercent, formatVnd, statusForAchievement } from "@/lib/utils";
+import {
+  PLATFORMS,
+  monthlyPlatformBu,
+  MONTHS,
+  getFilteredKpi,
+  getChannelOps,
+  getMonthlyChannelRows,
+  platformColor,
+} from "@/lib/data";
+import { getMonthlyContentBreakdown, type ContentDetailItem } from "@/lib/monthly-content-data";
+import { formatPercent, formatVnd, statusForAchievement, cn } from "@/lib/utils";
+
+type Delta = { pct: number | null; direction: "up" | "down" | "flat" | null };
+function toDelta(pct: number | null): Delta {
+  if (pct == null) return { pct: null, direction: null };
+  return { pct, direction: pct > 0.5 ? "up" : pct < -0.5 ? "down" : "flat" };
+}
+function DeltaTag({ d }: { d: Delta }) {
+  if (d.pct == null) return <span className="text-[11px] text-ink-3">—</span>;
+  const Icon = d.direction === "up" ? ArrowUp : d.direction === "down" ? ArrowDown : Minus;
+  const tone = d.direction === "up" ? "text-good-ink" : d.direction === "down" ? "text-crit-ink" : "text-ink-3";
+  return (
+    <span className={cn("inline-flex items-center gap-0.5 text-[11px] font-semibold", tone)}>
+      <Icon size={11} />
+      {d.pct >= 0 ? "+" : ""}
+      {formatPercent(d.pct, 1)}
+    </span>
+  );
+}
 
 export function KpiRowClient() {
   const { month, platform, bu } = useFilters();
@@ -171,5 +199,147 @@ export function TargetAchievementSection() {
       <p className="mb-2 text-[12px] text-ink-2">{label} — sắp xếp theo % thấp → cao.</p>
       <BarList data={list} valueFormatter={(v) => formatPercent(v, 0)} />
     </>
+  );
+}
+
+function ContentBreakdownRow({
+  item,
+  maxGmv,
+  color,
+}: {
+  item: ReturnType<typeof getMonthlyContentBreakdown>[number]["items"][number];
+  maxGmv: number;
+  color: string;
+}) {
+  const widthPct = maxGmv > 0 ? Math.max(3, (item.gmv / maxGmv) * 100) : 0;
+
+  return (
+    <div className={cn("relative flex items-center gap-2 text-[11.5px]", item.detail && "group")}>
+      <span className="w-[78px] shrink-0 truncate text-ink-2" title={item.label}>
+        {item.label}
+      </span>
+      <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-alt">
+        <div className="h-full rounded-full" style={{ width: `${widthPct}%`, background: color }} />
+      </div>
+      <span className="w-[64px] shrink-0 text-right tabular font-semibold text-ink-1">{formatVnd(item.gmv)}</span>
+
+      {item.detail && (
+        <div className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-60 rounded-lg border border-border bg-surface p-2.5 text-[11px] shadow-lg group-hover:block">
+          <div className="mb-1.5 font-bold text-ink-1">Chi tiết &quot;Khác&quot;</div>
+          <ul className="max-h-40 space-y-0.5 overflow-y-auto">
+            {item.detail.map((d: ContentDetailItem) => (
+              <li key={d.label} className="flex justify-between gap-2">
+                <span className="truncate text-ink-2">{d.label}</span>
+                <span className="shrink-0 tabular text-ink-1">{formatVnd(d.gmv)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Clone của WeeklyContentBreakdownSection (tab Weekly) nhưng theo Tháng — dùng filter Tháng chung của tab Tổng quan. */
+export function MonthlyContentBreakdownSection() {
+  const { month, platform, bu } = useFilters();
+  const breakdowns = getMonthlyContentBreakdown(month, platform, bu);
+
+  if (breakdowns.length === 0) {
+    return (
+      <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
+        Lazada không có cột Content Type/Channel trong sheet nguồn.
+      </p>
+    );
+  }
+
+  return (
+    <div className={cn("grid gap-4", breakdowns.length > 1 ? "md:grid-cols-2" : "md:grid-cols-1")}>
+      {breakdowns.map((b) => {
+        const maxGmv = Math.max(...b.items.map((it) => it.gmv), 1);
+        return (
+          <div key={b.platform} className="rounded-lg border border-border p-3">
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[12.5px] font-bold text-ink-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ background: platformColor[b.platform] }}
+                />
+                {b.platform}
+              </span>
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3">
+                {b.dimensionLabel}
+              </span>
+            </div>
+            {b.hasData ? (
+              <div className="space-y-2">
+                {b.items.map((it) => (
+                  <ContentBreakdownRow key={it.label} item={it} maxGmv={maxGmv} color={platformColor[b.platform]} />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12px] text-ink-3">
+                Không có dữ liệu cho tháng này.
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Clone rút gọn của WeeklyChannelTable (tab Weekly) nhưng theo Tháng — chỉ 1 delta (so tháng trước). */
+export function MonthlyChannelTable() {
+  const { month, platform, bu } = useFilters();
+  const rows = getMonthlyChannelRows(month, platform, bu);
+
+  if (rows.length === 0) {
+    return (
+      <p className="rounded-lg bg-surface-alt px-3 py-8 text-center text-[12.5px] text-ink-3">
+        Không có kênh nào khớp bộ lọc.
+      </p>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[720px] text-left text-[12.5px]">
+        <thead>
+          <tr className="border-b border-border text-[11px] uppercase tracking-wide text-ink-3">
+            <th className="py-2 pr-3 font-bold">Kênh</th>
+            <th className="py-2 pr-3 font-bold">GMV</th>
+            <th className="py-2 pr-3 font-bold">So sánh</th>
+            <th className="py-2 pr-3 font-bold">Đơn</th>
+            <th className="py-2 pr-3 font-bold">So sánh</th>
+            <th className="py-2 pr-3 font-bold">ROAS</th>
+            <th className="py-2 pr-3 font-bold">Hoàn thành</th>
+            <th className="py-2 font-bold">Refund</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.key} className="border-b border-border/60 last:border-0">
+              <td className="py-2 pr-3 font-semibold text-ink-1">
+                {r.platform} {r.bu}
+              </td>
+              <td className="py-2 pr-3 tabular">{r.gmv != null ? formatVnd(r.gmv) : "—"}</td>
+              <td className="py-2 pr-3">
+                <DeltaTag d={toDelta(r.momGmvPct)} />
+              </td>
+              <td className="py-2 pr-3 tabular">{r.orders != null ? r.orders.toLocaleString("vi-VN") : "—"}</td>
+              <td className="py-2 pr-3">
+                <DeltaTag d={toDelta(r.momOrdersPct)} />
+              </td>
+              <td className="py-2 pr-3 tabular">{r.roas != null ? `${r.roas.toFixed(1)}x` : "—"}</td>
+              <td className="py-2 pr-3 tabular">
+                {r.completionRatePct != null ? formatPercent(r.completionRatePct) : "—"}
+              </td>
+              <td className="py-2 tabular">{r.refundRatePct != null ? formatPercent(r.refundRatePct) : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
