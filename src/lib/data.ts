@@ -298,89 +298,9 @@ export function getChannelOps(month: MonthKey, platform: PlatformFilter, bu: BuF
   };
 }
 
-// ---- Tab 2 · Affiliate & Creator ---------------------------------------
-
-/** Top creator/affiliate theo GMV, luỹ kế toàn bộ dữ liệu trong sheet. */
-export const topCreators: Record<Platform, { name: string; gmv: number }[]> = {
-  Shopee: [
-    { name: "CreatorX Media Network", gmv: 212_243_141 },
-    { name: "ShopBack Việt Nam", gmv: 147_147_929 },
-    { name: "SteveGate", gmv: 109_497_516 },
-    { name: "ADPIA VN Official", gmv: 101_652_599 },
-    { name: "GA", gmv: 72_973_031 },
-    { name: "ACCESSTRADEVN", gmv: 69_853_558 },
-  ],
-  "TikTok Shop": [
-    { name: "HEPMIL VIETNAM", gmv: 121_063_765 },
-    { name: "menamtao", gmv: 55_029_001 },
-    { name: "iflytek02", gmv: 48_915_234 },
-    { name: "megaote24", gmv: 42_837_419 },
-    { name: "bitcoin.hauann", gmv: 34_450_586 },
-    { name: "julyshop_sn.sale", gmv: 32_784_531 },
-  ],
-  Lazada: [],
-};
-
-/** GMV theo Category sản phẩm, Shopee (PC+MCC gộp). Source: cột L1 Global Category. */
-export const categoryGmv = [
-  { category: "Sắc Đẹp", gmv: 1_912_602_050 },
-  { category: "Mẹ & Bé", gmv: 1_163_047_445 },
-  { category: "Sức Khỏe", gmv: 603_821_468 },
-];
-
-/** GMV theo kênh Traffic, Shopee (PC+MCC gộp). Source: cột Channel. */
-export const trafficChannelGmv = [
-  { channel: "Facebook", gmv: 947_795_804 },
-  { channel: "Websites", gmv: 716_000_606 },
-  { channel: "Shopee Video", gmv: 599_450_102 },
-  { channel: "Others", gmv: 565_116_810 },
-  { channel: "Shopee Live", gmv: 511_209_088 },
-];
-
-/** GMV theo GMV Source, TikTok Shop. Source: cột GMV Source. */
-export const gmvSourceByBu: Record<BU, { source: string; gmv: number }[]> = {
-  PC: [
-    { source: "Seller Creator", gmv: 489_190_000 },
-    { source: "Affiliate Creator", gmv: 423_007_913 },
-    { source: "MCN", gmv: 1_903_764 },
-  ],
-  MCC: [
-    { source: "Affiliate Creator", gmv: 1_260_800_402 },
-    { source: "Seller Creator", gmv: 408_710_000 },
-    { source: "MCN", gmv: 157_828_317 },
-  ],
-};
-
-/** GMV theo Content Type, TikTok Shop MCC (chỉ populate với Affiliate Creator). */
-export const contentTypeGmv = [
-  { type: "Video", gmv: 636_245_697 },
-  { type: "External Traffic", gmv: 366_404_677 },
-  { type: "Showcase", gmv: 216_881_483 },
-  { type: "Livestream", gmv: 41_268_545 },
-];
-
-/** GMV theo Loại chiến dịch, Shopee. Source: cột Campaign Type. */
-export const campaignTypeByBu: Record<BU, { type: "Mở rộng" | "Mục tiêu"; gmv: number }[]> = {
-  PC: [
-    { type: "Mở rộng", gmv: 1_278_551_983 },
-    { type: "Mục tiêu", gmv: 1_237_871_535 },
-  ],
-  MCC: [
-    { type: "Mở rộng", gmv: 621_358_320 },
-    { type: "Mục tiêu", gmv: 541_689_125 },
-  ],
-};
-
-/** GMV theo Order Status, TikTok Shop MCC. Chỉ Settled+Completed là GMV thật. */
-export const orderStatusFunnel = [
-  { status: "Settled", gmv: 860_804_524, real: true },
-  { status: "Ineligible", gmv: 466_627_910, real: false },
-  { status: "Canceled", gmv: 334_907_000, real: false },
-  { status: "Pending", gmv: 56_648_979, real: false },
-  { status: "Completed", gmv: 54_851_000, real: true },
-  { status: "Unpaid by customer", gmv: 34_547_306, real: false },
-  { status: "Shipped", gmv: 18_952_000, real: false },
-];
+// ---- Tab 2 · Affiliate & Creator ----------------------------------------
+// Đã chuyển sang src/lib/affiliate-data.ts + affiliate-raw-data.ts — trích xuất theo creator +
+// Tháng/Tuần thay vì snapshot luỹ kế tĩnh, để filter Tháng/Tuần/Platform/BU thực sự áp dụng được.
 
 // ---- Tab 3 · Vận hành: Payout & ROAS -----------------------------------
 
