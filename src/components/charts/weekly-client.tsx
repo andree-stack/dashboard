@@ -13,7 +13,6 @@ import { getWeeklyContentBreakdown } from "@/lib/weekly-content-data";
 import { platformColor } from "@/lib/data";
 import { formatVnd, formatPercent, cn } from "@/lib/utils";
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
-import { BarList } from "@/components/charts/bar-list";
 import { WeeklyTrendChart } from "@/components/charts/weekly-trend-chart";
 
 const HIGHLIGHT_THRESHOLD = 15;
@@ -191,41 +190,105 @@ export function WeeklyChannelTable({ week, compareWeek }: { week: WeekKey; compa
   );
 }
 
-export function WeeklyContentBreakdownSection({ week }: { week: WeekKey }) {
-  const { platform, bu } = useFilters();
-  const breakdowns = getWeeklyContentBreakdown(week, platform, bu);
+function ContentBreakdownRow({
+  item,
+  maxGmv,
+  color,
+  deltaPct,
+}: {
+  item: ReturnType<typeof getWeeklyContentBreakdown>[number]["items"][number];
+  maxGmv: number;
+  color: string;
+  deltaPct: number | null;
+}) {
+  const widthPct = maxGmv > 0 ? Math.max(3, (item.gmv / maxGmv) * 100) : 0;
 
   return (
-    <div className={cn("grid gap-4", breakdowns.length > 1 ? "md:grid-cols-3" : "md:grid-cols-1")}>
-      {breakdowns.map((b) => (
-        <div key={b.platform} className="rounded-lg border border-border p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-[12.5px] font-bold text-ink-1">
-              <span
-                className="inline-block h-2.5 w-2.5 rounded-full"
-                style={{ background: platformColor[b.platform] }}
-              />
-              {b.platform}
-            </span>
-            <span className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3">
-              {b.dimensionLabel}
-            </span>
-          </div>
-          {b.hasData ? (
-            <BarList
-              data={b.items.map((it) => ({ name: it.label, value: it.gmv }))}
-              color={platformColor[b.platform]}
-              height={Math.max(120, b.items.length * 30)}
-            />
-          ) : (
-            <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12px] text-ink-3">
-              {b.platform === "Lazada"
-                ? "Lazada không có cột Content Type/Channel trong sheet nguồn."
-                : "Không có dữ liệu cho tuần này."}
-            </p>
-          )}
+    <div className={cn("relative flex items-center gap-2 text-[11.5px]", item.detail && "group")}>
+      <span className="w-[78px] shrink-0 truncate text-ink-2" title={item.label}>
+        {item.label}
+      </span>
+      <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-alt">
+        <div className="h-full rounded-full" style={{ width: `${widthPct}%`, background: color }} />
+      </div>
+      <span className="w-[58px] shrink-0 text-right tabular font-semibold text-ink-1">{formatVnd(item.gmv)}</span>
+      <span className="w-[54px] shrink-0 text-right">
+        <DeltaTag d={toDelta(deltaPct)} />
+      </span>
+
+      {item.detail && (
+        <div className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-60 rounded-lg border border-border bg-surface p-2.5 text-[11px] shadow-lg group-hover:block">
+          <div className="mb-1.5 font-bold text-ink-1">Chi tiết &quot;Khác&quot;</div>
+          <ul className="max-h-40 space-y-0.5 overflow-y-auto">
+            {item.detail.map((d) => (
+              <li key={d.label} className="flex justify-between gap-2">
+                <span className="truncate text-ink-2">{d.label}</span>
+                <span className="shrink-0 tabular text-ink-1">{formatVnd(d.gmv)}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-      ))}
+      )}
+    </div>
+  );
+}
+
+export function WeeklyContentBreakdownSection({ week, compareWeek }: { week: WeekKey; compareWeek: WeekKey | null }) {
+  const { platform, bu } = useFilters();
+  const breakdowns = getWeeklyContentBreakdown(week, platform, bu);
+  const compareBreakdowns = compareWeek ? getWeeklyContentBreakdown(compareWeek, platform, bu) : [];
+
+  if (breakdowns.length === 0) {
+    return (
+      <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
+        Lazada không có cột Content Type/Channel trong sheet nguồn.
+      </p>
+    );
+  }
+
+  return (
+    <div className={cn("grid gap-4", breakdowns.length > 1 ? "md:grid-cols-2" : "md:grid-cols-1")}>
+      {breakdowns.map((b) => {
+        const cmpItems = compareBreakdowns.find((c) => c.platform === b.platform)?.items ?? [];
+        const maxGmv = Math.max(...b.items.map((it) => it.gmv), 1);
+        return (
+          <div key={b.platform} className="rounded-lg border border-border p-3">
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[12.5px] font-bold text-ink-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ background: platformColor[b.platform] }}
+                />
+                {b.platform}
+              </span>
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3">
+                {b.dimensionLabel}
+              </span>
+            </div>
+            {b.hasData ? (
+              <div className="space-y-2">
+                {b.items.map((it) => {
+                  const cmp = cmpItems.find((c) => c.label === it.label);
+                  const deltaPct = cmp && cmp.gmv > 0 ? ((it.gmv - cmp.gmv) / cmp.gmv) * 100 : null;
+                  return (
+                    <ContentBreakdownRow
+                      key={it.label}
+                      item={it}
+                      maxGmv={maxGmv}
+                      color={platformColor[b.platform]}
+                      deltaPct={deltaPct}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12px] text-ink-3">
+                Không có dữ liệu cho tuần này.
+              </p>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -272,12 +335,13 @@ export function WeeklyDashboard() {
         <CardHeader
           title="GMV theo Content Type / Kênh traffic"
           kind="Bar list"
-          desc="Tuần đang xem — theo đúng Platform/BU đang lọc. Shopee: Kênh traffic (Facebook/Websites/Shopee Video/Shopee Live/Khác). TikTok Shop: Content Type (Video/External Traffic/Showcase/Livestream/Khác)."
+          desc="Tuần đang xem, so với tuần ở ô So sánh với. Shopee: Kênh traffic (Facebook/Websites/Shopee Video/Shopee Live/Khác). TikTok Shop: Content Type (Video/External Traffic/Showcase/Livestream/Khác)."
         />
-        <WeeklyContentBreakdownSection week={week} />
+        <WeeklyContentBreakdownSection week={week} compareWeek={compareWeek} />
         <CardFootnote>
-          Lazada không có cột tương đương trong sheet nguồn nên luôn để trống. Shopee gộp ~20 giá
-          trị Channel gốc về 4 nhóm chính + &quot;Khác&quot; để nhất quán qua các tuần.
+          Lazada không có cột tương đương trong sheet nguồn nên không hiện ở đây. Shopee gộp ~20
+          giá trị Channel gốc về 4 nhóm chính + &quot;Khác&quot; để nhất quán qua các tuần — di
+          chuột vào &quot;Khác&quot; để xem chi tiết từng kênh gốc bên trong.
         </CardFootnote>
       </Card>
 
