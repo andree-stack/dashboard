@@ -187,7 +187,13 @@ function weekIndex(week: WeekKey): number {
   return WEEKS.findIndex((w) => w.key === week);
 }
 
-function shiftWeek(week: WeekKey, offset: number): WeekKey | null {
+/** Danh sách đầy đủ 6 tổ hợp Platform × BU — dùng để bảng theo kênh luôn hiện đủ hàng, kể cả khi
+ * tuần đang chọn kênh đó không có dữ liệu (thay vì ẩn hẳn hàng đi, dễ gây hiểu nhầm là bug). */
+export const ALL_CHANNELS: { key: string; platform: Platform; bu: BU }[] = PLATFORMS.flatMap((p) =>
+  (["PC", "MCC"] as BU[]).map((b) => ({ key: `${p}-${b}`, platform: p, bu: b }))
+);
+
+export function shiftWeek(week: WeekKey, offset: number): WeekKey | null {
   const idx = weekIndex(week) - offset;
   return idx >= 0 ? WEEKS[idx].key : null;
 }
@@ -236,27 +242,32 @@ export type WeeklyKpiSummary = {
   weekLabel: string;
   isPartial: boolean;
   hasData: boolean;
-  prevWeekLabel: string | null;
+  compareWeekLabel: string | null;
   sameLastMonthLabel: string | null;
   cards: WeeklyKpiCardData[];
 };
 
 /**
  * 4 thẻ KPI tuần (GMV, Số đơn, AOV, Payout) cho đúng bộ lọc Platform × BU đang chọn, mỗi thẻ có
- * 2 delta: WoW (so tuần trước liền kề) và so cùng tuần tháng trước (lùi 4 tuần — xấp xỉ, vì
+ * 2 delta: "WoW" so với `compareWeek` (mặc định là tuần liền trước, nhưng người dùng có thể đổi
+ * sang tuần bất kỳ để so sánh) và so cùng tuần tháng trước (luôn tự động lùi 4 tuần — xấp xỉ, vì
  * tháng không chia hết cho tuần).
  */
-export function getWeeklyKpis(week: WeekKey, platform: PlatformFilter, bu: BuFilter): WeeklyKpiSummary {
+export function getWeeklyKpis(
+  week: WeekKey,
+  platform: PlatformFilter,
+  bu: BuFilter,
+  compareWeek: WeekKey | null
+): WeeklyKpiSummary {
   const meta = WEEKS[weekIndex(week)];
   const rows = matchingRows(week, platform, bu);
   const hasData = rows.length > 0;
   const cur = hasData ? sumTotals(rows) : null;
   const curAov = cur && cur.orders > 0 ? Math.round(cur.gmv / cur.orders) : null;
 
-  const prevWeek = shiftWeek(week, 1);
-  const prevRows = prevWeek ? matchingRows(prevWeek, platform, bu) : [];
-  const prev = prevRows.length > 0 ? sumTotals(prevRows) : null;
-  const prevAov = prev && prev.orders > 0 ? Math.round(prev.gmv / prev.orders) : null;
+  const compareRows = compareWeek ? matchingRows(compareWeek, platform, bu) : [];
+  const cmp = compareRows.length > 0 ? sumTotals(compareRows) : null;
+  const cmpAov = cmp && cmp.orders > 0 ? Math.round(cmp.gmv / cmp.orders) : null;
 
   const lmWeek = shiftWeek(week, SAME_WEEK_LAST_MONTH_OFFSET);
   const lmRows = lmWeek ? matchingRows(lmWeek, platform, bu) : [];
@@ -268,28 +279,28 @@ export function getWeeklyKpis(week: WeekKey, platform: PlatformFilter, bu: BuFil
       key: "gmv",
       label: "GMV",
       value: cur?.gmv ?? null,
-      wow: delta(cur?.gmv ?? null, prev?.gmv ?? null),
+      wow: delta(cur?.gmv ?? null, cmp?.gmv ?? null),
       sameLastMonth: delta(cur?.gmv ?? null, lm?.gmv ?? null),
     },
     {
       key: "orders",
       label: "Số đơn",
       value: cur?.orders ?? null,
-      wow: delta(cur?.orders ?? null, prev?.orders ?? null),
+      wow: delta(cur?.orders ?? null, cmp?.orders ?? null),
       sameLastMonth: delta(cur?.orders ?? null, lm?.orders ?? null),
     },
     {
       key: "aov",
       label: "AOV (GMV/đơn)",
       value: curAov,
-      wow: delta(curAov, prevAov),
+      wow: delta(curAov, cmpAov),
       sameLastMonth: delta(curAov, lmAov),
     },
     {
       key: "payout",
       label: "Payout",
       value: cur?.payout ?? null,
-      wow: delta(cur?.payout ?? null, prev?.payout ?? null),
+      wow: delta(cur?.payout ?? null, cmp?.payout ?? null),
       sameLastMonth: delta(cur?.payout ?? null, lm?.payout ?? null),
     },
   ];
@@ -298,7 +309,7 @@ export function getWeeklyKpis(week: WeekKey, platform: PlatformFilter, bu: BuFil
     weekLabel: meta.label,
     isPartial: meta.isPartial,
     hasData,
-    prevWeekLabel: prevWeek ? WEEKS[weekIndex(prevWeek)].label : null,
+    compareWeekLabel: compareWeek ? WEEKS[weekIndex(compareWeek)].label : null,
     sameLastMonthLabel: lmWeek ? WEEKS[weekIndex(lmWeek)].label : null,
     cards,
   };
@@ -308,41 +319,60 @@ export type WeeklyChannelRow = {
   key: string;
   platform: Platform;
   bu: BU;
-  gmv: number;
-  orders: number;
-  payout: number;
-  roas: number;
+  gmv: number | null;
+  orders: number | null;
+  payout: number | null;
+  roas: number | null;
   completionRatePct: number | null;
   refundRatePct: number | null;
   wowGmvPct: number | null;
   sameLastMonthGmvPct: number | null;
+  wowOrdersPct: number | null;
+  sameLastMonthOrdersPct: number | null;
 };
 
-/** Bảng so sánh theo từng kênh (Platform × BU) khớp bộ lọc, sort GMV giảm dần. */
-export function getWeeklyChannelRows(week: WeekKey, platform: PlatformFilter, bu: BuFilter): WeeklyChannelRow[] {
-  const rows = matchingRows(week, platform, bu);
-  const prevWeek = shiftWeek(week, 1);
+/**
+ * Bảng so sánh theo từng kênh (Platform × BU) khớp bộ lọc — luôn liệt kê đủ 6 tổ hợp Platform × BU
+ * (lọc theo Platform/BU đang chọn), kể cả khi tuần đang xem kênh đó chưa có dữ liệu (hiện "—" thay
+ * vì ẩn hẳn hàng, để không bị hiểu nhầm là thiếu/bug). Sort theo GMV giảm dần, kênh chưa có dữ
+ * liệu xuống cuối. GMV/Đơn có 2 delta: so `compareWeek` (mặc định tuần trước, có thể đổi) và so
+ * cùng tuần tháng trước (tự động, lùi 4 tuần).
+ */
+export function getWeeklyChannelRows(
+  week: WeekKey,
+  platform: PlatformFilter,
+  bu: BuFilter,
+  compareWeek: WeekKey | null
+): WeeklyChannelRow[] {
+  const wd = weeklyChannelData[week];
+  const compareData = compareWeek ? weeklyChannelData[compareWeek] : undefined;
   const lmWeek = shiftWeek(week, SAME_WEEK_LAST_MONTH_OFFSET);
+  const lmData = lmWeek ? weeklyChannelData[lmWeek] : undefined;
 
-  return rows
-    .map((r) => {
-      const prevRow = prevWeek ? weeklyChannelData[prevWeek]?.[r.key] : undefined;
-      const lmRow = lmWeek ? weeklyChannelData[lmWeek]?.[r.key] : undefined;
+  return ALL_CHANNELS.filter(
+    (c) => (platform === "Tất cả" || c.platform === platform) && (bu === "Tất cả" || c.bu === bu)
+  )
+    .map((c) => {
+      const r = wd?.[c.key];
+      const cmpRow = compareData?.[c.key];
+      const lmRow = lmData?.[c.key];
       return {
-        key: r.key,
-        platform: r.platform,
-        bu: r.bu,
-        gmv: r.gmv,
-        orders: r.orders,
-        payout: r.payout,
-        roas: r.roas,
-        completionRatePct: r.completionRatePct,
-        refundRatePct: r.refundRatePct,
-        wowGmvPct: delta(r.gmv, prevRow?.gmv ?? null).pct,
-        sameLastMonthGmvPct: delta(r.gmv, lmRow?.gmv ?? null).pct,
+        key: c.key,
+        platform: c.platform,
+        bu: c.bu,
+        gmv: r?.gmv ?? null,
+        orders: r?.orders ?? null,
+        payout: r?.payout ?? null,
+        roas: r?.roas ?? null,
+        completionRatePct: r?.completionRatePct ?? null,
+        refundRatePct: r?.refundRatePct ?? null,
+        wowGmvPct: delta(r?.gmv ?? null, cmpRow?.gmv ?? null).pct,
+        sameLastMonthGmvPct: delta(r?.gmv ?? null, lmRow?.gmv ?? null).pct,
+        wowOrdersPct: delta(r?.orders ?? null, cmpRow?.orders ?? null).pct,
+        sameLastMonthOrdersPct: delta(r?.orders ?? null, lmRow?.orders ?? null).pct,
       };
     })
-    .sort((a, b) => b.gmv - a.gmv);
+    .sort((a, b) => (b.gmv ?? -1) - (a.gmv ?? -1));
 }
 
 /** Các kênh có |WoW GMV%| vượt ngưỡng — để đưa vào bảng "Cần chú ý", sort theo mức lệch giảm dần. */
@@ -350,9 +380,10 @@ export function getWeeklyHighlights(
   week: WeekKey,
   platform: PlatformFilter,
   bu: BuFilter,
+  compareWeek: WeekKey | null,
   thresholdPct = 15
 ): WeeklyChannelRow[] {
-  return getWeeklyChannelRows(week, platform, bu)
+  return getWeeklyChannelRows(week, platform, bu, compareWeek)
     .filter((r) => r.wowGmvPct != null && Math.abs(r.wowGmvPct) >= thresholdPct)
     .sort((a, b) => Math.abs(b.wowGmvPct!) - Math.abs(a.wowGmvPct!));
 }

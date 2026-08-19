@@ -1,28 +1,33 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useFilters } from "@/components/filter-context";
 import { DEFAULT_MONTH, MONTHS, PLATFORMS, type BuFilter, type MonthKey, type PlatformFilter } from "@/lib/data";
 
 export function FilterBar() {
   const { month, platform, bu, setMonth, setPlatform, setBu } = useFilters();
+  const pathname = usePathname();
+  const showMonth = !pathname?.startsWith("/weekly");
 
   return (
     <div className="sticky top-14 z-10 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:bg-surface">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface pl-3 pr-1 py-1 text-[12.5px] text-ink-2">
-          📅
-          <select
-            value={month}
-            onChange={(e) => setMonth(e.target.value as MonthKey)}
-            className="rounded-full bg-transparent py-0.5 pr-2 font-bold text-ink-1 outline-none"
-          >
-            {MONTHS.map((m) => (
-              <option key={m.key} value={m.key}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </span>
+        {showMonth && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface pl-3 pr-1 py-1 text-[12.5px] text-ink-2">
+            📅
+            <select
+              value={month}
+              onChange={(e) => setMonth(e.target.value as MonthKey)}
+              className="rounded-full bg-transparent py-0.5 pr-2 font-bold text-ink-1 outline-none"
+            >
+              {MONTHS.map((m) => (
+                <option key={m.key} value={m.key}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </span>
+        )}
 
         <select
           value={platform}
@@ -45,10 +50,10 @@ export function FilterBar() {
           <option>MCC</option>
         </select>
 
-        {(month !== DEFAULT_MONTH || platform !== "Tất cả" || bu !== "Tất cả") && (
+        {((showMonth && month !== DEFAULT_MONTH) || platform !== "Tất cả" || bu !== "Tất cả") && (
           <button
             onClick={() => {
-              setMonth(DEFAULT_MONTH);
+              if (showMonth) setMonth(DEFAULT_MONTH);
               setPlatform("Tất cả");
               setBu("Tất cả");
             }}
