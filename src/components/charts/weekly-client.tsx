@@ -9,7 +9,7 @@ import {
   type WeekKey,
   type Delta,
 } from "@/lib/weekly-data";
-import { getWeeklyContentBreakdown } from "@/lib/weekly-content-data";
+import { getWeeklyContentBreakdown, type ContentDetailItem } from "@/lib/weekly-content-data";
 import { platformColor } from "@/lib/data";
 import { formatVnd, formatPercent, cn } from "@/lib/utils";
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
@@ -195,11 +195,13 @@ function ContentBreakdownRow({
   maxGmv,
   color,
   deltaPct,
+  compareDetail,
 }: {
   item: ReturnType<typeof getWeeklyContentBreakdown>[number]["items"][number];
   maxGmv: number;
   color: string;
   deltaPct: number | null;
+  compareDetail?: ContentDetailItem[];
 }) {
   const widthPct = maxGmv > 0 ? Math.max(3, (item.gmv / maxGmv) * 100) : 0;
 
@@ -217,15 +219,22 @@ function ContentBreakdownRow({
       </span>
 
       {item.detail && (
-        <div className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-60 rounded-lg border border-border bg-surface p-2.5 text-[11px] shadow-lg group-hover:block">
+        <div className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-72 rounded-lg border border-border bg-surface p-2.5 text-[11px] shadow-lg group-hover:block">
           <div className="mb-1.5 font-bold text-ink-1">Chi tiết &quot;Khác&quot;</div>
           <ul className="max-h-40 space-y-0.5 overflow-y-auto">
-            {item.detail.map((d) => (
-              <li key={d.label} className="flex justify-between gap-2">
-                <span className="truncate text-ink-2">{d.label}</span>
-                <span className="shrink-0 tabular text-ink-1">{formatVnd(d.gmv)}</span>
-              </li>
-            ))}
+            {item.detail.map((d) => {
+              const cmpD = compareDetail?.find((c) => c.label === d.label);
+              const dPct = cmpD && cmpD.gmv > 0 ? ((d.gmv - cmpD.gmv) / cmpD.gmv) * 100 : null;
+              return (
+                <li key={d.label} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-ink-2">{d.label}</span>
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <span className="tabular text-ink-1">{formatVnd(d.gmv)}</span>
+                    <DeltaTag d={toDelta(dPct)} />
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -277,6 +286,7 @@ export function WeeklyContentBreakdownSection({ week, compareWeek }: { week: Wee
                       maxGmv={maxGmv}
                       color={platformColor[b.platform]}
                       deltaPct={deltaPct}
+                      compareDetail={cmp?.detail}
                     />
                   );
                 })}

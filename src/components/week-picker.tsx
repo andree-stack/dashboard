@@ -9,7 +9,9 @@ import { cn } from "@/lib/utils";
 const PICKER_VISIBLE_ROWS = 5;
 const PICKER_ROW_HEIGHT = 36;
 
-/** Dropdown chọn tuần dạng tuỳ biến — chỉ hiện ~5 tuần gần nhất, scroll để thấy các tuần xa hơn. */
+/** Dropdown chọn tuần dạng tuỳ biến — chỉ hiện ~5 tuần gần nhất, scroll để thấy các tuần xa hơn.
+ * Không tự vẽ label — dùng chung layout/caption với các filter khác ở component gọi nó, để cả
+ * hàng filter thẳng hàng và cùng format. */
 export function WeekPicker({
   label,
   value,
@@ -37,13 +39,13 @@ export function WeekPicker({
 
   return (
     <div className="relative" ref={ref}>
-      <span className="mb-1 block text-[10.5px] font-bold uppercase tracking-wide text-ink-3">{label}</span>
       <button
         type="button"
+        aria-label={label}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[12.5px] font-bold text-ink-1"
+        className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-surface px-3.5 text-[12.5px] font-semibold text-ink-1 outline-none focus:border-accent"
       >
-        🗓️ {selected ? selected.label : "—"}
+        {selected ? selected.label : "—"}
         {selected?.isPartial && (
           <span className="rounded-full bg-warn-bg px-1.5 py-0.5 text-[10px] font-bold text-warn-ink">MTD</span>
         )}
