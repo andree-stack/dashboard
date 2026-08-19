@@ -165,10 +165,19 @@ export function getCategoryBreakdown(mode: PeriodMode, period: string, platform:
   return buBreakdown(mode === "month" ? categoryMonthRaw : categoryWeekRaw, period, bu);
 }
 
+/** Nhãn gốc trong sheet là "Chiến dịch mở rộng/mục tiêu" — rút gọn cho vừa trục Y của chart. */
+const CAMPAIGN_LABEL_SHORT: Record<string, string> = {
+  "Chiến dịch mở rộng": "Mở rộng",
+  "Chiến dịch mục tiêu": "Mục tiêu",
+};
+
 /** GMV theo Loại chiến dịch (Mở rộng/Mục tiêu) — chỉ Shopee, tách PC/MCC. */
 export function getCampaignBreakdown(mode: PeriodMode, period: string, platform: PlatformFilter, bu: BuFilter): BuBreakdownRow[] | null {
   if (platform !== "Tất cả" && platform !== "Shopee") return null;
-  return buBreakdown(mode === "month" ? campaignMonthRaw : campaignWeekRaw, period, bu);
+  return buBreakdown(mode === "month" ? campaignMonthRaw : campaignWeekRaw, period, bu).map((r) => ({
+    ...r,
+    label: CAMPAIGN_LABEL_SHORT[r.label] ?? r.label,
+  }));
 }
 
 /** GMV theo nguồn Creator (Seller/Affiliate/MCN) — chỉ TikTok Shop, tách PC/MCC. */

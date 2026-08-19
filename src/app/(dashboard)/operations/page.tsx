@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
-import { PayoutSection, RoasSection, OperationsSummary } from "@/components/charts/operations-client";
+import { PayoutSection, RoasSection, OperationsSummary, OrderStatusSection } from "@/components/charts/operations-client";
 
 export default function OperationsPage() {
   return (
@@ -14,7 +14,7 @@ export default function OperationsPage() {
 
       <OperationsSummary />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid items-start gap-4 md:grid-cols-2">
         <Card>
           <CardHeader title="Payout theo kênh" kind="Bar" desc="Cập nhật theo tháng đang chọn." />
           <PayoutSection />
@@ -37,6 +37,19 @@ export default function OperationsPage() {
           </CardFootnote>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title="Phễu trạng thái đơn hàng"
+          kind="Bar xếp hạng"
+          desc="Shopee + TikTok Shop, tháng đang chọn — mỗi platform 1 bộ trạng thái riêng."
+        />
+        <OrderStatusSection />
+        <CardFootnote>
+          Lazada không có cột Order Status nên không hiện ở đây. Shopee: GMV thật = đơn &quot;Hoàn
+          thành&quot;. TikTok Shop: GMV thật = Settled + Completed.
+        </CardFootnote>
+      </Card>
 
       <Card className="border-dashed bg-surface-alt">
         <CardHeader

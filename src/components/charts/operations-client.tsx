@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useFilters } from "@/components/filter-context";
 import { BarList } from "@/components/charts/bar-list";
 import { MONTHS, monthlyChannelOps, getChannelOps, platformColor, type Platform, type BU } from "@/lib/data";
+import { getOrderStatusBreakdown } from "@/lib/affiliate-data";
 import { formatVnd, formatPercent } from "@/lib/utils";
 
 function channelRows(month: ReturnType<typeof useFilters>["month"]) {
@@ -96,6 +97,54 @@ export function OperationsSummary() {
           {ops.hasData ? rows.length : "—"}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Chuyển từ tab Affiliate & Creator sang đây — cùng nguồn 5 sheet chi tiết dùng cho Payout/ROAS ở trên. */
+export function OrderStatusSection() {
+  const { month, platform, bu } = useFilters();
+  const breakdowns = getOrderStatusBreakdown("month", month, platform, bu);
+
+  if (breakdowns.length === 0) {
+    return (
+      <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
+        Lazada không có cột Order Status trong sheet nguồn.
+      </p>
+    );
+  }
+
+  return (
+    <div className={breakdowns.length > 1 ? "grid gap-4 md:grid-cols-2" : "grid gap-4"}>
+      {breakdowns.map((b) => {
+        const total = b.rows.reduce((s, r) => s + r.gmv, 0);
+        const realTotal = b.rows.filter((r) => r.real).reduce((s, r) => s + r.gmv, 0);
+        return (
+          <div key={b.platform} className="rounded-lg border border-border p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-bold text-ink-1">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: platformColor[b.platform] }} />
+              {b.platform}
+            </div>
+            {b.hasData ? (
+              <>
+                <BarList
+                  height={Math.max(90, b.rows.length * 30)}
+                  data={b.rows.map((r) => ({
+                    name: `${r.status} · ${formatPercent((r.gmv / total) * 100, 0)}`,
+                    value: r.gmv,
+                    color: r.real ? "var(--color-good)" : "var(--color-crit)",
+                  }))}
+                />
+                <p className="mt-2 inline-block rounded-md bg-accent-soft px-2 py-1 text-[11px] text-accent-ink">
+                  GMV thật: {formatPercent((realTotal / total) * 100, 0)}
+                </p>
+              </>
+            ) : (
+              <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12px] text-ink-3">Không có dữ liệu cho tháng này.</p>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

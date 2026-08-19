@@ -34,7 +34,7 @@ export default function OverviewPage() {
         </CardFootnote>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid items-start gap-4 md:grid-cols-2">
         <Card>
           <CardHeader
             title="GMV theo Platform × BU"

@@ -4,7 +4,6 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { ArrowUp, ArrowDown, Minus, ChevronLeft, ChevronRight, BadgeCheck } from "lucide-react";
 import { useFilters } from "@/components/filter-context";
 import { WeekPicker } from "@/components/week-picker";
-import { BarList } from "@/components/charts/bar-list";
 import { BuGroupedBar } from "@/components/charts/bu-grouped-bar";
 import { StackedPercentBar } from "@/components/charts/stacked-percent-bar";
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
@@ -15,7 +14,6 @@ import {
   getCategoryBreakdown,
   getCampaignBreakdown,
   getGmvSourceBreakdown,
-  getOrderStatusBreakdown,
   type PeriodMode,
 } from "@/lib/affiliate-data";
 import { platformColor } from "@/lib/data";
@@ -99,12 +97,12 @@ function PeriodModeBar() {
           ))}
         </div>
       </div>
-      {mode === "week" && (
-        <>
-          <WeekPicker label="Tuần xem" value={week} onChange={setWeek} />
-          <WeekPicker label="So sánh với" value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
-        </>
-      )}
+      {/* Luôn giữ 2 WeekPicker trong layout (chỉ ẩn bằng visibility) để đổi Theo tháng/Theo tuần
+          không làm cả hàng filter đổi bề rộng rồi nhảy xuống dòng khác. */}
+      <div className={cn("flex gap-2", mode !== "week" && "invisible")} aria-hidden={mode !== "week"}>
+        <WeekPicker label="Tuần xem" value={week} onChange={setWeek} />
+        <WeekPicker label="So sánh với" value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
+      </div>
     </div>
   );
 }
@@ -120,47 +118,66 @@ function useAffiliateCtx() {
 
 function TopCreatorsCard() {
   const { platform, bu } = useFilters();
-  const { mode, period } = useAffiliateCtx();
+  const { mode, period, comparePeriod } = useAffiliateCtx();
   const [page, setPage] = useState(0);
-  const rows = useMemo(() => getCreatorRows(mode, period, null, platform, bu), [mode, period, platform, bu]);
+  const [search, setSearch] = useState("");
+  const allRows = useMemo(
+    () => getCreatorRows(mode, period, comparePeriod, platform, bu),
+    [mode, period, comparePeriod, platform, bu]
+  );
 
-  const platformsPresent = useMemo(() => [...new Set(rows.map((r) => r.platform))], [rows]);
+  const q = search.trim().toLowerCase();
+  const rows = q ? allRows.filter((r) => r.name.toLowerCase().includes(q)) : allRows;
+
+  const platformsPresent = useMemo(() => [...new Set(allRows.map((r) => r.platform))], [allRows]);
   const totalPages = Math.ceil(rows.length / CREATOR_PAGE_SIZE) || 1;
   const effectivePage = Math.min(page, totalPages - 1);
   const pageRows = rows.slice(effectivePage * CREATOR_PAGE_SIZE, effectivePage * CREATOR_PAGE_SIZE + CREATOR_PAGE_SIZE);
   const maxGmv = Math.max(...rows.map((r) => r.gmv), 1);
 
-  if (rows.length === 0) {
-    return (
-      <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
-        Không có creator nào khớp bộ lọc ở kỳ này.
-      </p>
-    );
-  }
-
   return (
     <>
-      <div className="space-y-2">
-        {pageRows.map((r, i) => {
-          const widthPct = Math.max(3, (r.gmv / maxGmv) * 100);
-          return (
-            <div key={`${r.platform}-${r.name}`} className="flex items-center gap-2 text-[12.5px]">
-              <span className="w-4 shrink-0 text-right tabular text-ink-3">{effectivePage * CREATOR_PAGE_SIZE + i + 1}</span>
-              <span className="w-[140px] shrink-0 truncate text-ink-1" title={r.name}>
-                {r.name}
-              </span>
-              <div className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-alt">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${widthPct}%`, background: platformColor[r.platform] }}
-                />
-              </div>
-              <span className="w-[64px] shrink-0 text-right tabular font-semibold text-ink-1">{formatVnd(r.gmv)}</span>
-            </div>
-          );
-        })}
-      </div>
-      <Pager page={effectivePage} totalPages={totalPages} onChange={setPage} />
+      <input
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(0);
+        }}
+        placeholder="Tìm creator ID..."
+        className="mb-3 w-full max-w-[240px] rounded-full border border-border bg-surface px-3 py-1.5 text-[12.5px] text-ink-1 outline-none focus:border-accent"
+      />
+      {rows.length === 0 ? (
+        <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
+          {allRows.length === 0 ? "Không có creator nào khớp bộ lọc ở kỳ này." : `Không tìm thấy creator khớp "${search}".`}
+        </p>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {pageRows.map((r, i) => {
+              const widthPct = Math.max(3, (r.gmv / maxGmv) * 100);
+              return (
+                <div key={`${r.platform}-${r.name}`} className="flex items-center gap-2 text-[12.5px]">
+                  <span className="w-4 shrink-0 text-right tabular text-ink-3">{effectivePage * CREATOR_PAGE_SIZE + i + 1}</span>
+                  <span className="w-[120px] shrink-0 truncate text-ink-1" title={r.name}>
+                    {r.name}
+                  </span>
+                  <div className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-alt">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${widthPct}%`, background: platformColor[r.platform] }}
+                    />
+                  </div>
+                  <span className="w-[62px] shrink-0 text-right tabular font-semibold text-ink-1">{formatVnd(r.gmv)}</span>
+                  <span className="w-[58px] shrink-0 text-right">
+                    <DeltaTag d={toDelta(r.wowPct)} />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <Pager page={effectivePage} totalPages={totalPages} onChange={setPage} />
+        </>
+      )}
       <div className="mt-2.5 flex flex-wrap items-center gap-3 text-[12px] text-ink-2">
         {platformsPresent.map((p) => (
           <span key={p} className="inline-flex items-center gap-1.5">
@@ -168,7 +185,9 @@ function TopCreatorsCard() {
             {p}
           </span>
         ))}
-        <span className="text-ink-3">{rows.length} creator (top 50/kênh đang track)</span>
+        <span className="text-ink-3">
+          {allRows.length} creator (top 50/kênh đang track){q ? ` · ${rows.length} khớp tìm kiếm` : ""}
+        </span>
       </div>
     </>
   );
@@ -246,47 +265,39 @@ function GmvSourceCard() {
   );
 }
 
-function OrderStatusCard() {
-  const { platform, bu } = useFilters();
-  const { mode, period } = useAffiliateCtx();
-  const breakdowns = getOrderStatusBreakdown(mode, period, platform, bu);
+type SortKey = "orders" | "gmv" | "payout" | "isNew";
+type SortState = { key: SortKey; dir: "asc" | "desc" } | null;
 
-  if (breakdowns.length === 0) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">Lazada không có cột Order Status trong sheet nguồn.</p>;
-  }
-
+function SortableHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: SortState;
+  onSort: (k: SortKey) => void;
+}) {
+  const active = sort?.key === sortKey;
   return (
-    <div className={cn("grid gap-4", breakdowns.length > 1 ? "md:grid-cols-2" : "md:grid-cols-1")}>
-      {breakdowns.map((b) => {
-        const total = b.rows.reduce((s, r) => s + r.gmv, 0);
-        const realTotal = b.rows.filter((r) => r.real).reduce((s, r) => s + r.gmv, 0);
-        return (
-          <div key={b.platform} className="rounded-lg border border-border p-3">
-            <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-bold text-ink-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: platformColor[b.platform] }} />
-              {b.platform}
-            </div>
-            {b.hasData ? (
-              <>
-                <BarList
-                  height={Math.max(90, b.rows.length * 30)}
-                  data={b.rows.map((r) => ({
-                    name: `${r.status} · ${formatPercent((r.gmv / total) * 100, 0)}`,
-                    value: r.gmv,
-                    color: r.real ? "var(--color-good)" : "var(--color-crit)",
-                  }))}
-                />
-                <p className="mt-2 inline-block rounded-md bg-accent-soft px-2 py-1 text-[11px] text-accent-ink">
-                  GMV thật: {formatPercent((realTotal / total) * 100, 0)}
-                </p>
-              </>
-            ) : (
-              <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12px] text-ink-3">Không có dữ liệu cho kỳ này.</p>
-            )}
-          </div>
-        );
-      })}
-    </div>
+    <th className="py-2 pr-3 font-bold">
+      <button
+        onClick={() => onSort(sortKey)}
+        className={cn("inline-flex items-center gap-0.5", active ? "text-accent-ink" : "text-ink-3")}
+      >
+        {label}
+        {active ? (
+          sort!.dir === "asc" ? (
+            <ArrowUp size={11} />
+          ) : (
+            <ArrowDown size={11} />
+          )
+        ) : (
+          <Minus size={11} className="opacity-30" />
+        )}
+      </button>
+    </th>
   );
 }
 
@@ -294,70 +305,112 @@ function CreatorDetailTable() {
   const { platform, bu } = useFilters();
   const { mode, period, comparePeriod } = useAffiliateCtx();
   const [page, setPage] = useState(0);
-  const rows = useMemo(
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortState>(null);
+  const allRows = useMemo(
     () => getCreatorRows(mode, period, comparePeriod, platform, bu),
     [mode, period, comparePeriod, platform, bu]
   );
+
+  const q = search.trim().toLowerCase();
+  const filtered = q ? allRows.filter((r) => r.name.toLowerCase().includes(q)) : allRows;
+
+  const rows = useMemo(() => {
+    if (!sort) return filtered;
+    const dirMul = sort.dir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      const av = sort.key === "isNew" ? (a.isNew ? 1 : 0) : a[sort.key];
+      const bv = sort.key === "isNew" ? (b.isNew ? 1 : 0) : b[sort.key];
+      return (av - bv) * dirMul;
+    });
+  }, [filtered, sort]);
+
+  function handleSort(key: SortKey) {
+    setPage(0);
+    setSort((prev) => (prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
+  }
+
+  const newCount = allRows.filter((r) => r.isNew).length;
 
   const PAGE_SIZE = 20;
   const totalPages = Math.ceil(rows.length / PAGE_SIZE) || 1;
   const effectivePage = Math.min(page, totalPages - 1);
   const pageRows = rows.slice(effectivePage * PAGE_SIZE, effectivePage * PAGE_SIZE + PAGE_SIZE);
 
-  if (rows.length === 0) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-8 text-center text-[12.5px] text-ink-3">Không có creator nào khớp bộ lọc ở kỳ này.</p>;
-  }
-
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-[12.5px]">
-          <thead>
-            <tr className="border-b border-border text-[11px] uppercase tracking-wide text-ink-3">
-              <th className="py-2 pr-3 font-bold">Creator</th>
-              <th className="py-2 pr-3 font-bold">Kênh</th>
-              <th className="py-2 pr-3 font-bold">Đơn</th>
-              <th className="py-2 pr-3 font-bold">GMV</th>
-              <th className="py-2 pr-3 font-bold">Payout</th>
-              <th className="py-2 pr-3 font-bold">ROAS</th>
-              <th className="py-2 pr-3 font-bold">So sánh</th>
-              <th className="py-2 font-bold">Mới?</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.map((r) => (
-              <tr key={`${r.platform}-${r.name}`} className="border-b border-border/60 last:border-0">
-                <td className="max-w-[220px] truncate py-2 pr-3 font-semibold text-ink-1" title={r.name}>
-                  {r.name}
-                </td>
-                <td className="py-2 pr-3">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="inline-block h-2 w-2 rounded-full" style={{ background: platformColor[r.platform] }} />
-                    {r.platform}
-                  </span>
-                </td>
-                <td className="py-2 pr-3 tabular">{r.orders.toLocaleString("vi-VN")}</td>
-                <td className="py-2 pr-3 tabular font-semibold">{formatVnd(r.gmv)}</td>
-                <td className="py-2 pr-3 tabular">{formatVnd(r.payout)}</td>
-                <td className="py-2 pr-3 tabular">{r.roas.toFixed(1)}x</td>
-                <td className="py-2 pr-3">
-                  <DeltaTag d={toDelta(r.wowPct)} />
-                </td>
-                <td className="py-2">
-                  {r.isNew ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-good-bg px-2 py-0.5 text-[11px] font-bold text-good-ink">
-                      <BadgeCheck size={12} /> Mới
-                    </span>
-                  ) : (
-                    <span className="text-ink-3">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
+          placeholder="Tìm creator ID..."
+          className="w-full max-w-[240px] rounded-full border border-border bg-surface px-3 py-1.5 text-[12.5px] text-ink-1 outline-none focus:border-accent"
+        />
+        <span className="text-[12px] text-ink-2">
+          {allRows.length} creator{q ? ` · ${rows.length} khớp tìm kiếm` : ""} ·{" "}
+          <span className="font-semibold text-good-ink">{newCount} mới</span>
+        </span>
       </div>
-      <Pager page={effectivePage} totalPages={totalPages} onChange={setPage} />
+
+      {rows.length === 0 ? (
+        <p className="rounded-lg bg-surface-alt px-3 py-8 text-center text-[12.5px] text-ink-3">
+          {allRows.length === 0 ? "Không có creator nào khớp bộ lọc ở kỳ này." : `Không tìm thấy creator khớp "${search}".`}
+        </p>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-left text-[12.5px]">
+              <thead>
+                <tr className="border-b border-border text-[11px] uppercase tracking-wide text-ink-3">
+                  <th className="py-2 pr-3 font-bold">Creator</th>
+                  <th className="py-2 pr-3 font-bold">Kênh</th>
+                  <SortableHeader label="Đơn" sortKey="orders" sort={sort} onSort={handleSort} />
+                  <SortableHeader label="GMV" sortKey="gmv" sort={sort} onSort={handleSort} />
+                  <SortableHeader label="Payout" sortKey="payout" sort={sort} onSort={handleSort} />
+                  <th className="py-2 pr-3 font-bold">ROAS</th>
+                  <th className="py-2 pr-3 font-bold">So sánh GMV</th>
+                  <SortableHeader label="Mới?" sortKey="isNew" sort={sort} onSort={handleSort} />
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((r) => (
+                  <tr key={`${r.platform}-${r.name}`} className="border-b border-border/60 last:border-0">
+                    <td className="max-w-[220px] truncate py-2 pr-3 font-semibold text-ink-1" title={r.name}>
+                      {r.name}
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-block h-2 w-2 rounded-full" style={{ background: platformColor[r.platform] }} />
+                        {r.platform}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 tabular">{r.orders.toLocaleString("vi-VN")}</td>
+                    <td className="py-2 pr-3 tabular font-semibold">{formatVnd(r.gmv)}</td>
+                    <td className="py-2 pr-3 tabular">{formatVnd(r.payout)}</td>
+                    <td className="py-2 pr-3 tabular">{r.roas.toFixed(1)}x</td>
+                    <td className="py-2 pr-3">
+                      <DeltaTag d={toDelta(r.wowPct)} />
+                    </td>
+                    <td className="py-2">
+                      {r.isNew ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-good-bg px-2 py-0.5 text-[11px] font-bold text-good-ink">
+                          <BadgeCheck size={12} /> Mới
+                        </span>
+                      ) : (
+                        <span className="text-ink-3">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pager page={effectivePage} totalPages={totalPages} onChange={setPage} />
+        </>
+      )}
     </>
   );
 }
@@ -396,7 +449,7 @@ export function AffiliateDashboard() {
           </CardFootnote>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid items-start gap-4 md:grid-cols-2">
           <Card>
             <CardHeader title="GMV theo Category sản phẩm" kind="Grouped bar" desc={`Shopee — cột L1 Global Category, ${periodLabel}.`} />
             <CategoryCard />
@@ -417,15 +470,6 @@ export function AffiliateDashboard() {
           />
           <GmvSourceCard />
           <CardFootnote>Nguồn: (Updated) VN TTS PC&apos;26 + MCC&apos;26 — cột GMV Source.</CardFootnote>
-        </Card>
-
-        <Card>
-          <CardHeader title="Phễu trạng thái đơn hàng" kind="Bar xếp hạng" desc={`Shopee + TikTok Shop, ${periodLabel} — mỗi platform 1 bộ trạng thái riêng.`} />
-          <OrderStatusCard />
-          <CardFootnote>
-            Lazada không có cột Order Status nên không hiện ở đây. Shopee: GMV thật = đơn &quot;Hoàn
-            thành&quot;. TikTok Shop: GMV thật = Settled + Completed.
-          </CardFootnote>
         </Card>
 
         <Card>
