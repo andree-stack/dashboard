@@ -3,11 +3,14 @@
 import { usePathname } from "next/navigation";
 import { useFilters } from "@/components/filter-context";
 import { DEFAULT_MONTH, MONTHS, PLATFORMS, type BuFilter, type MonthKey, type PlatformFilter } from "@/lib/data";
+import { WeekPicker } from "@/components/week-picker";
 
 export function FilterBar() {
-  const { month, platform, bu, setMonth, setPlatform, setBu } = useFilters();
+  const { month, platform, bu, week, compareWeek, setMonth, setPlatform, setBu, setWeek, setCompareWeek } =
+    useFilters();
   const pathname = usePathname();
-  const showMonth = !pathname?.startsWith("/weekly");
+  const isWeekly = pathname?.startsWith("/weekly");
+  const showMonth = !isWeekly;
 
   return (
     <div className="sticky top-14 z-10 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:bg-surface">
@@ -49,6 +52,13 @@ export function FilterBar() {
           <option>PC</option>
           <option>MCC</option>
         </select>
+
+        {isWeekly && (
+          <>
+            <WeekPicker label="Tuần xem" value={week} onChange={setWeek} />
+            <WeekPicker label="So sánh với" value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
+          </>
+        )}
 
         {((showMonth && month !== DEFAULT_MONTH) || platform !== "Tất cả" || bu !== "Tất cả") && (
           <button

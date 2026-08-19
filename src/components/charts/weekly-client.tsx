@@ -1,26 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowUp, ArrowDown, Minus, AlertTriangle, ChevronDown } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, AlertTriangle } from "lucide-react";
 import { useFilters } from "@/components/filter-context";
 import {
-  WEEKS,
-  DEFAULT_WEEK,
   getWeeklyKpis,
   getWeeklyChannelRows,
   getWeeklyHighlights,
-  shiftWeek,
   type WeekKey,
   type Delta,
 } from "@/lib/weekly-data";
+import { getWeeklyContentBreakdown } from "@/lib/weekly-content-data";
+import { platformColor } from "@/lib/data";
 import { formatVnd, formatPercent, cn } from "@/lib/utils";
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
+import { BarList } from "@/components/charts/bar-list";
 import { WeeklyTrendChart } from "@/components/charts/weekly-trend-chart";
 
 const HIGHLIGHT_THRESHOLD = 15;
-/** Số dòng hiện sẵn không cần scroll trong picker tuần (~36px/dòng). */
-const PICKER_VISIBLE_ROWS = 5;
-const PICKER_ROW_HEIGHT = 36;
 
 function DeltaTag({ d, label }: { d: Delta; label?: string }) {
   const prefix = label ? `${label}: ` : "";
@@ -50,74 +46,6 @@ function formatCardValue(key: string, value: number | null): string {
   if (value == null) return "—";
   if (key === "orders") return value.toLocaleString("vi-VN");
   return formatVnd(value);
-}
-
-/** Dropdown chọn tuần dạng tuỳ biến — chỉ hiện ~5 tuần gần nhất, scroll để thấy các tuần xa hơn. */
-function WeekPicker({
-  label,
-  value,
-  onChange,
-  excludeWeek,
-}: {
-  label: string;
-  value: WeekKey | null;
-  onChange: (w: WeekKey) => void;
-  excludeWeek?: WeekKey | null;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  const options = [...WEEKS].reverse().filter((w) => w.key !== excludeWeek);
-  const selected = WEEKS.find((w) => w.key === value) ?? null;
-
-  return (
-    <div className="relative" ref={ref}>
-      <span className="mb-1 block text-[10.5px] font-bold uppercase tracking-wide text-ink-3">{label}</span>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[12.5px] font-bold text-ink-1"
-      >
-        🗓️ {selected ? selected.label : "—"}
-        {selected?.isPartial && (
-          <span className="rounded-full bg-warn-bg px-1.5 py-0.5 text-[10px] font-bold text-warn-ink">MTD</span>
-        )}
-        <ChevronDown size={14} className="text-ink-3" />
-      </button>
-      {open && (
-        <div className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
-          <div className="overflow-y-auto py-1" style={{ maxHeight: PICKER_VISIBLE_ROWS * PICKER_ROW_HEIGHT }}>
-            {options.map((w) => (
-              <button
-                key={w.key}
-                type="button"
-                onClick={() => {
-                  onChange(w.key);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center justify-between px-3 py-2 text-left text-[12.5px] hover:bg-surface-alt",
-                  w.key === value ? "bg-accent-soft font-bold text-accent-ink" : "text-ink-1"
-                )}
-                style={{ height: PICKER_ROW_HEIGHT }}
-              >
-                {w.label}
-                {w.isPartial && <span className="text-[10px] text-warn-ink">MTD</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export function WeeklyKpiRow({ week, compareWeek }: { week: WeekKey; compareWeek: WeekKey | null }) {
@@ -263,32 +191,57 @@ export function WeeklyChannelTable({ week, compareWeek }: { week: WeekKey; compa
   );
 }
 
-export function WeeklyDashboard() {
-  const [week, setWeekState] = useState<WeekKey>(DEFAULT_WEEK);
-  const [compareWeek, setCompareWeek] = useState<WeekKey | null>(shiftWeek(DEFAULT_WEEK, 1));
+export function WeeklyContentBreakdownSection({ week }: { week: WeekKey }) {
+  const { platform, bu } = useFilters();
+  const breakdowns = getWeeklyContentBreakdown(week, platform, bu);
 
-  function setWeek(w: WeekKey) {
-    setWeekState(w);
-    // Mặc định đổi luôn tuần so sánh sang tuần liền trước của tuần mới chọn; người dùng vẫn có
-    // thể tự đổi lại ô "So sánh với" sau đó.
-    setCompareWeek(shiftWeek(w, 1));
-  }
+  return (
+    <div className={cn("grid gap-4", breakdowns.length > 1 ? "md:grid-cols-3" : "md:grid-cols-1")}>
+      {breakdowns.map((b) => (
+        <div key={b.platform} className="rounded-lg border border-border p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[12.5px] font-bold text-ink-1">
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ background: platformColor[b.platform] }}
+              />
+              {b.platform}
+            </span>
+            <span className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3">
+              {b.dimensionLabel}
+            </span>
+          </div>
+          {b.hasData ? (
+            <BarList
+              data={b.items.map((it) => ({ name: it.label, value: it.gmv }))}
+              color={platformColor[b.platform]}
+              height={Math.max(120, b.items.length * 30)}
+            />
+          ) : (
+            <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12px] text-ink-3">
+              {b.platform === "Lazada"
+                ? "Lazada không có cột Content Type/Channel trong sheet nguồn."
+                : "Không có dữ liệu cho tuần này."}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function WeeklyDashboard() {
+  const { week, compareWeek } = useFilters();
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-bold text-ink-1">Weekly</h1>
-          <p className="text-[13px] text-ink-2">
-            Theo dõi hiệu quả theo tuần (Thứ 2 → Chủ nhật) — nguồn: 5 sheet chi tiết giao dịch, group
-            theo tuần. Đổi <b>Platform/BU</b> ở thanh lọc phía trên; chọn tuần xem &amp; tuần so sánh ở
-            đây.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-start gap-2">
-          <WeekPicker label="Tuần xem" value={week} onChange={setWeek} />
-          <WeekPicker label="So sánh với" value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
-        </div>
+      <div>
+        <h1 className="text-[22px] font-bold text-ink-1">Weekly</h1>
+        <p className="text-[13px] text-ink-2">
+          Theo dõi hiệu quả theo tuần (Thứ 2 → Chủ nhật) — nguồn: 5 sheet chi tiết giao dịch, group
+          theo tuần. Đổi <b>Platform/BU</b>, <b>Tuần xem</b> và <b>So sánh với</b> ở thanh lọc phía
+          trên.
+        </p>
       </div>
 
       <WeeklyKpiRow week={week} compareWeek={compareWeek} />
@@ -312,6 +265,19 @@ export function WeeklyDashboard() {
         <CardFootnote>
           Nguồn: 5 sheet chi tiết giao dịch, group theo Order Time / Time Created / Date của từng
           đơn hàng.
+        </CardFootnote>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="GMV theo Content Type / Kênh traffic"
+          kind="Bar list"
+          desc="Tuần đang xem — theo đúng Platform/BU đang lọc. Shopee: Kênh traffic (Facebook/Websites/Shopee Video/Shopee Live/Khác). TikTok Shop: Content Type (Video/External Traffic/Showcase/Livestream/Khác)."
+        />
+        <WeeklyContentBreakdownSection week={week} />
+        <CardFootnote>
+          Lazada không có cột tương đương trong sheet nguồn nên luôn để trống. Shopee gộp ~20 giá
+          trị Channel gốc về 4 nhóm chính + &quot;Khác&quot; để nhất quán qua các tuần.
         </CardFootnote>
       </Card>
 
