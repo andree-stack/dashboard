@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 import { useFilters } from "@/components/filter-context";
 import { DEFAULT_MONTH, MONTHS, PLATFORMS, type BuFilter, type MonthKey, type PlatformFilter } from "@/lib/data";
 import { WeekPicker } from "@/components/week-picker";
+import { usePreferences } from "@/components/preferences-context";
+import { translateMonthLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const CONTROL_CLASS =
@@ -22,6 +24,7 @@ export function FilterBar() {
   const { month, platform, bu, week, compareWeek, setMonth, setPlatform, setBu, setWeek, setCompareWeek } =
     useFilters();
   const pathname = usePathname();
+  const { t, lang } = usePreferences();
   const isWeekly = pathname?.startsWith("/weekly");
   const showMonth = !isWeekly;
   const hasActiveFilter = (showMonth && month !== DEFAULT_MONTH) || platform !== "Tất cả" || bu !== "Tất cả";
@@ -30,7 +33,7 @@ export function FilterBar() {
     <div className="sticky top-14 z-10 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:bg-surface">
       <div className="flex flex-wrap items-end gap-2">
         {showMonth && (
-          <FilterField label="Kỳ báo cáo">
+          <FilterField label={t("Kỳ báo cáo")}>
             <select
               value={month}
               onChange={(e) => setMonth(e.target.value as MonthKey)}
@@ -38,41 +41,43 @@ export function FilterBar() {
             >
               {MONTHS.map((m) => (
                 <option key={m.key} value={m.key}>
-                  {m.label}
+                  {translateMonthLabel(m.label, lang)}
                 </option>
               ))}
             </select>
           </FilterField>
         )}
 
-        <FilterField label="Nền tảng">
+        <FilterField label={t("Nền tảng")}>
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value as PlatformFilter)}
             className={CONTROL_CLASS}
           >
-            <option>Tất cả</option>
+            <option value="Tất cả">{t("Tất cả")}</option>
             {PLATFORMS.map((p) => (
-              <option key={p}>{p}</option>
+              <option key={p} value={p}>
+                {p}
+              </option>
             ))}
           </select>
         </FilterField>
 
         <FilterField label="BU">
           <select value={bu} onChange={(e) => setBu(e.target.value as BuFilter)} className={CONTROL_CLASS}>
-            <option>Tất cả</option>
-            <option>PC</option>
-            <option>MCC</option>
+            <option value="Tất cả">{t("Tất cả")}</option>
+            <option value="PC">PC</option>
+            <option value="MCC">MCC</option>
           </select>
         </FilterField>
 
         {isWeekly && (
           <>
-            <FilterField label="Tuần xem">
-              <WeekPicker label="Tuần xem" value={week} onChange={setWeek} />
+            <FilterField label={t("Tuần xem")}>
+              <WeekPicker label={t("Tuần xem")} value={week} onChange={setWeek} />
             </FilterField>
-            <FilterField label="So sánh với">
-              <WeekPicker label="So sánh với" value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
+            <FilterField label={t("So sánh với")}>
+              <WeekPicker label={t("So sánh với")} value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
             </FilterField>
           </>
         )}
@@ -86,7 +91,7 @@ export function FilterBar() {
             }}
             className={cn("h-9 text-[12px] font-semibold text-accent-ink hover:underline")}
           >
-            Xoá lọc
+            {t("Xoá lọc")}
           </button>
         )}
       </div>

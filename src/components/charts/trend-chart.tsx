@@ -11,23 +11,30 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useFilters } from "@/components/filter-context";
+import { usePreferences } from "@/components/preferences-context";
 import { getTrendSeries } from "@/lib/data";
-import { formatVnd } from "@/lib/utils";
 
 export function TrendChart() {
   const { month, platform, bu } = useFilters();
+  const { lang, t, formatMoney } = usePreferences();
   const { series, rows } = getTrendSeries(platform, bu);
 
   const modeLabel =
     series.length === 1
-      ? `1 line — đúng kênh đang lọc (${series[0].label})`
+      ? lang === "vi"
+        ? `1 line — đúng kênh đang lọc (${series[0].label})`
+        : `1 line — matches the current filter (${series[0].label})`
       : platform === "Tất cả"
-      ? "Tách theo Platform"
-      : `Tách theo BU trong ${platform}`;
+      ? t("Tách theo Platform")
+      : lang === "vi"
+      ? `Tách theo BU trong ${platform}`
+      : `Split by BU within ${platform}`;
 
   return (
     <div>
-      <p className="mb-2 text-[12px] text-ink-2">{modeLabel} — target là tổng target trong phạm vi đang lọc.</p>
+      <p className="mb-2 text-[12px] text-ink-2">
+        {modeLabel} — {t("target là tổng target trong phạm vi đang lọc.")}
+      </p>
       <ResponsiveContainer width="100%" height={280}>
         <ComposedChart data={rows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -36,12 +43,12 @@ export function TrendChart() {
             x={month}
             stroke="var(--color-accent)"
             strokeDasharray="2 2"
-            label={{ value: "Đang xem", position: "insideTopLeft", fill: "var(--color-accent-ink)", fontSize: 10 }}
+            label={{ value: t("Đang xem"), position: "insideTopLeft", fill: "var(--color-accent-ink)", fontSize: 10 }}
           />
-          <YAxis tickFormatter={(v) => formatVnd(v)} width={72} tickLine={false} axisLine={false} />
+          <YAxis tickFormatter={(v) => formatMoney(v)} width={72} tickLine={false} axisLine={false} />
           <Tooltip
-            formatter={(value) => (typeof value === "number" ? formatVnd(value) : String(value ?? "—"))}
-            labelFormatter={(label) => `Tháng ${String(label).replace("T", "")}`}
+            formatter={(value) => (typeof value === "number" ? formatMoney(value) : String(value ?? "—"))}
+            labelFormatter={(label) => `${t("Tháng")} ${String(label).replace("T", "")}`}
           />
           <Line
             type="monotone"
@@ -83,7 +90,7 @@ export function TrendChart() {
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-ink-2">
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block h-0 w-4 border-t-2 border-dashed border-ink-3" />
-          Target
+          {t("Target")}
         </span>
         {series.map((s) => (
           <span key={s.key} className="inline-flex items-center gap-1.5">

@@ -2,6 +2,7 @@
 
 import { ArrowUp, ArrowDown, Minus, AlertTriangle } from "lucide-react";
 import { useFilters } from "@/components/filter-context";
+import { usePreferences } from "@/components/preferences-context";
 import {
   getWeeklyKpis,
   getWeeklyChannelRows,
@@ -11,7 +12,7 @@ import {
 } from "@/lib/weekly-data";
 import { getWeeklyContentBreakdown, type ContentDetailItem } from "@/lib/weekly-content-data";
 import { platformColor } from "@/lib/data";
-import { formatVnd, formatPercent, cn } from "@/lib/utils";
+import { formatPercent, cn } from "@/lib/utils";
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
 import { WeeklyTrendChart } from "@/components/charts/weekly-trend-chart";
 
@@ -41,15 +42,16 @@ function toDelta(pct: number | null): Delta {
   return { pct, direction: pct > 0.5 ? "up" : pct < -0.5 ? "down" : "flat" };
 }
 
-function formatCardValue(key: string, value: number | null): string {
-  if (value == null) return "—";
-  if (key === "orders") return value.toLocaleString("vi-VN");
-  return formatVnd(value);
-}
-
 export function WeeklyKpiRow({ week, compareWeek }: { week: WeekKey; compareWeek: WeekKey | null }) {
   const { platform, bu } = useFilters();
+  const { t, formatMoney } = usePreferences();
   const k = getWeeklyKpis(week, platform, bu, compareWeek);
+
+  function formatCardValue(key: string, value: number | null): string {
+    if (value == null) return "—";
+    if (key === "orders") return value.toLocaleString("vi-VN");
+    return formatMoney(value);
+  }
 
   const scopeLabel = [platform !== "Tất cả" ? platform : null, bu !== "Tất cả" ? bu : null]
     .filter(Boolean)
@@ -58,7 +60,7 @@ export function WeeklyKpiRow({ week, compareWeek }: { week: WeekKey; compareWeek
   if (!k.hasData) {
     return (
       <p className="rounded-lg bg-surface-alt px-3 py-8 text-center text-[12.5px] text-ink-3">
-        Tuần {k.weekLabel}: không có dữ liệu cho {scopeLabel || "bộ lọc này"}.
+        {t("Tuần")} {k.weekLabel}: {t("không có dữ liệu cho")} {scopeLabel || t("bộ lọc này")}.
       </p>
     );
   }
@@ -68,21 +70,20 @@ export function WeeklyKpiRow({ week, compareWeek }: { week: WeekKey; compareWeek
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
         {k.cards.map((c) => (
           <div key={c.key} className="flex min-h-[128px] flex-col justify-between bg-surface p-4">
-            <div className="text-[11px] font-bold uppercase tracking-wide text-ink-3">{c.label}</div>
+            <div className="text-[11px] font-bold uppercase tracking-wide text-ink-3">{t(c.label)}</div>
             <div className="tabular text-[20px] font-bold text-ink-1">{formatCardValue(c.key, c.value)}</div>
             <div className="flex flex-col gap-0.5">
-              <DeltaTag d={c.wow} label="So sánh" />
-              <DeltaTag d={c.sameLastMonth} label="So cùng tuần tháng trước" />
+              <DeltaTag d={c.wow} label={t("So sánh")} />
+              <DeltaTag d={c.sameLastMonth} label={t("So cùng tuần tháng trước")} />
             </div>
           </div>
         ))}
       </div>
       <p className="mt-2 text-[11.5px] text-ink-3">
-        Tuần {k.weekLabel}
-        {scopeLabel ? ` · ${scopeLabel}` : ""}. &quot;So sánh&quot; đối chiếu với tuần bạn chọn ở ô{" "}
-        <b>So sánh với</b> ({k.compareWeekLabel ?? "chưa chọn"}); &quot;so cùng tuần tháng trước&quot; luôn tự
-        động lùi lại đúng 4 tuần ({k.sameLastMonthLabel ?? "—"}) — là xấp xỉ vì tháng không chia hết cho
-        tuần, không phải cùng ngày lịch chính xác.
+        {t("Tuần")} {k.weekLabel}
+        {scopeLabel ? ` · ${scopeLabel}` : ""}. {t('"So sánh" đối chiếu với tuần bạn chọn ở ô')}{" "}
+        <b>{t("So sánh với")}</b> ({k.compareWeekLabel ?? t("chưa chọn")}); {t('"so cùng tuần tháng trước" luôn tự động lùi lại đúng 4 tuần')} ({k.sameLastMonthLabel ?? "—"}) —{" "}
+        {t("là xấp xỉ vì tháng không chia hết cho tuần, không phải cùng ngày lịch chính xác.")}
       </p>
     </>
   );
@@ -90,12 +91,13 @@ export function WeeklyKpiRow({ week, compareWeek }: { week: WeekKey; compareWeek
 
 export function WeeklyHighlightPanel({ week, compareWeek }: { week: WeekKey; compareWeek: WeekKey | null }) {
   const { platform, bu } = useFilters();
+  const { t, formatMoney } = usePreferences();
   const rows = getWeeklyHighlights(week, platform, bu, compareWeek, HIGHLIGHT_THRESHOLD);
 
   if (rows.length === 0) {
     return (
       <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
-        Không có kênh nào lệch quá ±{HIGHLIGHT_THRESHOLD}% GMV so với tuần đang so sánh.
+        {t("Không có kênh nào lệch quá ±15% GMV so với tuần đang so sánh.")}
       </p>
     );
   }
@@ -120,7 +122,7 @@ export function WeeklyHighlightPanel({ week, compareWeek }: { week: WeekKey; com
               {up ? "+" : ""}
               {formatPercent(r.wowGmvPct!, 1)} GMV
             </span>
-            <span className="text-ink-3">{r.gmv != null ? formatVnd(r.gmv) : "—"}</span>
+            <span className="text-ink-3">{r.gmv != null ? formatMoney(r.gmv) : "—"}</span>
           </li>
         );
       })}
@@ -130,12 +132,13 @@ export function WeeklyHighlightPanel({ week, compareWeek }: { week: WeekKey; com
 
 export function WeeklyChannelTable({ week, compareWeek }: { week: WeekKey; compareWeek: WeekKey | null }) {
   const { platform, bu } = useFilters();
+  const { t, formatMoney } = usePreferences();
   const rows = getWeeklyChannelRows(week, platform, bu, compareWeek);
 
   if (rows.length === 0) {
     return (
       <p className="rounded-lg bg-surface-alt px-3 py-8 text-center text-[12.5px] text-ink-3">
-        Không có kênh nào khớp bộ lọc.
+        {t("Không có kênh nào khớp bộ lọc.")}
       </p>
     );
   }
@@ -145,16 +148,16 @@ export function WeeklyChannelTable({ week, compareWeek }: { week: WeekKey; compa
       <table className="w-full min-w-[860px] text-left text-[12.5px]">
         <thead>
           <tr className="border-b border-border text-[11px] uppercase tracking-wide text-ink-3">
-            <th className="py-2 pr-3 font-bold">Kênh</th>
+            <th className="py-2 pr-3 font-bold">{t("Kênh")}</th>
             <th className="py-2 pr-3 font-bold">GMV</th>
-            <th className="py-2 pr-3 font-bold">So sánh</th>
-            <th className="py-2 pr-3 font-bold">So cùng tuần th. trước</th>
-            <th className="py-2 pr-3 font-bold">Đơn</th>
-            <th className="py-2 pr-3 font-bold">So sánh</th>
-            <th className="py-2 pr-3 font-bold">So cùng tuần th. trước</th>
+            <th className="py-2 pr-3 font-bold">{t("So sánh")}</th>
+            <th className="py-2 pr-3 font-bold">{t("So cùng tuần th. trước")}</th>
+            <th className="py-2 pr-3 font-bold">{t("Đơn")}</th>
+            <th className="py-2 pr-3 font-bold">{t("So sánh")}</th>
+            <th className="py-2 pr-3 font-bold">{t("So cùng tuần th. trước")}</th>
             <th className="py-2 pr-3 font-bold">ROAS</th>
-            <th className="py-2 pr-3 font-bold">Hoàn thành</th>
-            <th className="py-2 font-bold">Refund</th>
+            <th className="py-2 pr-3 font-bold">{t("Hoàn thành")}</th>
+            <th className="py-2 font-bold">{t("Refund")}</th>
           </tr>
         </thead>
         <tbody>
@@ -163,7 +166,7 @@ export function WeeklyChannelTable({ week, compareWeek }: { week: WeekKey; compa
               <td className="py-2 pr-3 font-semibold text-ink-1">
                 {r.platform} {r.bu}
               </td>
-              <td className="py-2 pr-3 tabular">{r.gmv != null ? formatVnd(r.gmv) : "—"}</td>
+              <td className="py-2 pr-3 tabular">{r.gmv != null ? formatMoney(r.gmv) : "—"}</td>
               <td className="py-2 pr-3">
                 <DeltaTag d={toDelta(r.wowGmvPct)} />
               </td>
@@ -203,6 +206,7 @@ function ContentBreakdownRow({
   deltaPct: number | null;
   compareDetail?: ContentDetailItem[];
 }) {
+  const { t, formatMoney } = usePreferences();
   const widthPct = maxGmv > 0 ? Math.max(3, (item.gmv / maxGmv) * 100) : 0;
 
   return (
@@ -213,14 +217,14 @@ function ContentBreakdownRow({
       <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-alt">
         <div className="h-full rounded-full" style={{ width: `${widthPct}%`, background: color }} />
       </div>
-      <span className="w-[58px] shrink-0 text-right tabular font-semibold text-ink-1">{formatVnd(item.gmv)}</span>
+      <span className="w-[58px] shrink-0 text-right tabular font-semibold text-ink-1">{formatMoney(item.gmv)}</span>
       <span className="w-[54px] shrink-0 text-right">
         <DeltaTag d={toDelta(deltaPct)} />
       </span>
 
       {item.detail && (
         <div className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-72 rounded-lg border border-border bg-surface p-2.5 text-[11px] shadow-lg group-hover:block">
-          <div className="mb-1.5 font-bold text-ink-1">Chi tiết &quot;Khác&quot;</div>
+          <div className="mb-1.5 font-bold text-ink-1">{t('Chi tiết "Khác"')}</div>
           <ul className="max-h-40 space-y-0.5 overflow-y-auto">
             {item.detail.map((d) => {
               const cmpD = compareDetail?.find((c) => c.label === d.label);
@@ -229,7 +233,7 @@ function ContentBreakdownRow({
                 <li key={d.label} className="flex items-center justify-between gap-2">
                   <span className="truncate text-ink-2">{d.label}</span>
                   <span className="flex shrink-0 items-center gap-1.5">
-                    <span className="tabular text-ink-1">{formatVnd(d.gmv)}</span>
+                    <span className="tabular text-ink-1">{formatMoney(d.gmv)}</span>
                     <DeltaTag d={toDelta(dPct)} />
                   </span>
                 </li>
@@ -244,13 +248,14 @@ function ContentBreakdownRow({
 
 export function WeeklyContentBreakdownSection({ week, compareWeek }: { week: WeekKey; compareWeek: WeekKey | null }) {
   const { platform, bu } = useFilters();
+  const { t } = usePreferences();
   const breakdowns = getWeeklyContentBreakdown(week, platform, bu);
   const compareBreakdowns = compareWeek ? getWeeklyContentBreakdown(compareWeek, platform, bu) : [];
 
   if (breakdowns.length === 0) {
     return (
       <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
-        Lazada không có cột Content Type/Channel trong sheet nguồn.
+        {t("Lazada không có cột Content Type/Channel trong sheet nguồn.")}
       </p>
     );
   }
@@ -271,7 +276,7 @@ export function WeeklyContentBreakdownSection({ week, compareWeek }: { week: Wee
                 {b.platform}
               </span>
               <span className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3">
-                {b.dimensionLabel}
+                {t(b.dimensionLabel)}
               </span>
             </div>
             {b.hasData ? (
@@ -293,7 +298,7 @@ export function WeeklyContentBreakdownSection({ week, compareWeek }: { week: Wee
               </div>
             ) : (
               <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12px] text-ink-3">
-                Không có dữ liệu cho tuần này.
+                {t("Không có dữ liệu cho tuần này.")}
               </p>
             )}
           </div>
@@ -305,15 +310,15 @@ export function WeeklyContentBreakdownSection({ week, compareWeek }: { week: Wee
 
 export function WeeklyDashboard() {
   const { week, compareWeek } = useFilters();
+  const { t } = usePreferences();
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[22px] font-bold text-ink-1">Weekly</h1>
+        <h1 className="text-[22px] font-bold text-ink-1">{t("Weekly")}</h1>
         <p className="text-[13px] text-ink-2">
-          Theo dõi hiệu quả theo tuần (Thứ 2 → Chủ nhật) — nguồn: 5 sheet chi tiết giao dịch, group
-          theo tuần. Đổi <b>Platform/BU</b>, <b>Tuần xem</b> và <b>So sánh với</b> ở thanh lọc phía
-          trên.
+          {t("Theo dõi hiệu quả theo tuần (Thứ 2 → Chủ nhật) — nguồn: 5 sheet chi tiết giao dịch, group theo tuần. Đổi")}{" "}
+          <b>Platform/BU</b>, <b>{t("Tuần xem")}</b> {t("và")} <b>{t("So sánh với")}</b> {t("ở thanh lọc phía trên.")}
         </p>
       </div>
 
@@ -321,53 +326,46 @@ export function WeeklyDashboard() {
 
       <Card>
         <CardHeader
-          title="Kênh cần chú ý (GMV lệch ≥ 15% so với tuần so sánh)"
-          kind="Alert list"
-          desc="Tự động rà toàn bộ kênh khớp bộ lọc, sort theo mức lệch lớn nhất."
+          title={t("Kênh cần chú ý (GMV lệch ≥ 15% so với tuần so sánh)")}
+          kind={t("Alert list")}
+          desc={t("Tự động rà toàn bộ kênh khớp bộ lọc, sort theo mức lệch lớn nhất.")}
         />
         <WeeklyHighlightPanel week={week} compareWeek={compareWeek} />
       </Card>
 
       <Card>
         <CardHeader
-          title="GMV theo tuần"
-          kind="Line chart"
-          desc="20 tuần gần nhất (30/03–16/08/2026). Vòng tròn rỗng = tuần chưa trọn 7 ngày."
+          title={t("GMV theo tuần")}
+          kind={t("Line chart")}
+          desc={t("20 tuần gần nhất (30/03–16/08/2026). Vòng tròn rỗng = tuần chưa trọn 7 ngày.")}
         />
         <WeeklyTrendChart week={week} />
         <CardFootnote>
-          Nguồn: 5 sheet chi tiết giao dịch, group theo Order Time / Time Created / Date của từng
-          đơn hàng.
+          {t("Nguồn: 5 sheet chi tiết giao dịch, group theo Order Time / Time Created / Date của từng đơn hàng.")}
         </CardFootnote>
       </Card>
 
       <Card>
         <CardHeader
-          title="GMV theo Content Type / Kênh traffic"
-          kind="Bar list"
-          desc="Tuần đang xem, so với tuần ở ô So sánh với. Shopee: Kênh traffic (Facebook/Websites/Shopee Video/Shopee Live/Khác). TikTok Shop: Content Type (Video/External Traffic/Showcase/Livestream/Khác)."
+          title={t("GMV theo Content Type / Kênh traffic")}
+          kind={t("Bar list")}
+          desc={t("Tuần đang xem, so với tuần ở ô So sánh với. Shopee: Kênh traffic (Facebook/Websites/Shopee Video/Shopee Live/Khác). TikTok Shop: Content Type (Video/External Traffic/Showcase/Livestream/Khác).")}
         />
         <WeeklyContentBreakdownSection week={week} compareWeek={compareWeek} />
         <CardFootnote>
-          Lazada không có cột tương đương trong sheet nguồn nên không hiện ở đây. Shopee gộp ~20
-          giá trị Channel gốc về 4 nhóm chính + &quot;Khác&quot; để nhất quán qua các tuần — di
-          chuột vào &quot;Khác&quot; để xem chi tiết từng kênh gốc bên trong.
+          {t('Lazada không có cột tương đương trong sheet nguồn nên không hiện ở đây. Shopee gộp ~20 giá trị Channel gốc về 4 nhóm chính + "Khác" để nhất quán qua các tuần — di chuột vào "Khác" để xem chi tiết từng kênh gốc bên trong.')}
         </CardFootnote>
       </Card>
 
       <Card>
         <CardHeader
-          title="So sánh chi tiết theo kênh"
-          kind="Table"
-          desc="Luôn hiện đủ 6 tổ hợp Platform × BU khớp bộ lọc — kênh chưa có dữ liệu tuần này hiện “—”."
+          title={t("So sánh chi tiết theo kênh")}
+          kind={t("Table")}
+          desc={t("Luôn hiện đủ 6 tổ hợp Platform × BU khớp bộ lọc — kênh chưa có dữ liệu tuần này hiện \"—\".")}
         />
         <WeeklyChannelTable week={week} compareWeek={compareWeek} />
         <CardFootnote>
-          Lazada không có cột Order Status/Refund nên Hoàn thành/Refund luôn để trống cho kênh đó,
-          giống tab Vận hành; Lazada PC hiện chưa vận hành nên luôn “—”. ROAS = GMV ÷ Payout của
-          đúng tuần đang xem, không phải trung bình. TikTok Shop PC và Lazada MCC có volume thấp
-          theo tuần nên ROAS/% so sánh có thể biến động mạnh do độ trễ ghi nhận hoa hồng hoặc chỉ
-          vài đơn — đọc cùng với cột Đơn để tránh hiểu nhầm là xu hướng thật.
+          {t('Lazada không có cột Order Status/Refund nên Hoàn thành/Refund luôn để trống cho kênh đó, giống tab Vận hành; Lazada PC hiện chưa vận hành nên luôn "—". ROAS = GMV ÷ Payout của đúng tuần đang xem, không phải trung bình. TikTok Shop PC và Lazada MCC có volume thấp theo tuần nên ROAS/% so sánh có thể biến động mạnh do độ trễ ghi nhận hoa hồng hoặc chỉ vài đơn — đọc cùng với cột Đơn để tránh hiểu nhầm là xu hướng thật.')}
         </CardFootnote>
       </Card>
     </div>

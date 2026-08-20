@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import { ArrowUp, ArrowDown, Minus, ChevronLeft, ChevronRight, BadgeCheck } from "lucide-react";
 import { useFilters } from "@/components/filter-context";
+import { usePreferences } from "@/components/preferences-context";
 import { WeekPicker } from "@/components/week-picker";
 import { BuGroupedBar } from "@/components/charts/bu-grouped-bar";
 import { StackedPercentBar } from "@/components/charts/stacked-percent-bar";
@@ -16,8 +17,9 @@ import {
   getGmvSourceBreakdown,
   type PeriodMode,
 } from "@/lib/affiliate-data";
+import { translateMonthLabel } from "@/lib/i18n";
 import { platformColor } from "@/lib/data";
-import { formatVnd, formatPercent, cn } from "@/lib/utils";
+import { formatPercent, cn } from "@/lib/utils";
 
 const CREATOR_PAGE_SIZE = 10;
 
@@ -41,6 +43,7 @@ function DeltaTag({ d }: { d: Delta }) {
 }
 
 function Pager({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
+  const { t } = usePreferences();
   if (totalPages <= 1) return null;
   return (
     <div className="mt-2.5 flex items-center justify-end gap-2 text-[12px] text-ink-2">
@@ -52,7 +55,7 @@ function Pager({ page, totalPages, onChange }: { page: number; totalPages: numbe
         <ChevronLeft size={14} />
       </button>
       <span>
-        Trang {page + 1}/{totalPages}
+        {t("Trang")} {page + 1}/{totalPages}
       </span>
       <button
         onClick={() => onChange(Math.min(totalPages - 1, page + 1))}
@@ -78,10 +81,11 @@ function usePeriodMode() {
 
 function PeriodModeBar() {
   const { mode, setMode, week, compareWeek, setWeek, setCompareWeek } = useAffiliateCtx();
+  const { t } = usePreferences();
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1">
-        <span className="text-[10.5px] font-bold uppercase tracking-wide text-ink-3">Chế độ xem</span>
+        <span className="text-[10.5px] font-bold uppercase tracking-wide text-ink-3">{t("Chế độ xem")}</span>
         <div className="flex overflow-hidden rounded-full border border-border">
           {(["month", "week"] as PeriodMode[]).map((m) => (
             <button
@@ -92,7 +96,7 @@ function PeriodModeBar() {
                 mode === m ? "bg-accent-soft text-accent-ink" : "bg-surface text-ink-2"
               )}
             >
-              {m === "month" ? "Theo tháng" : "Theo tuần"}
+              {m === "month" ? t("Theo tháng") : t("Theo tuần")}
             </button>
           ))}
         </div>
@@ -100,8 +104,8 @@ function PeriodModeBar() {
       {/* Luôn giữ 2 WeekPicker trong layout (chỉ ẩn bằng visibility) để đổi Theo tháng/Theo tuần
           không làm cả hàng filter đổi bề rộng rồi nhảy xuống dòng khác. */}
       <div className={cn("flex gap-2", mode !== "week" && "invisible")} aria-hidden={mode !== "week"}>
-        <WeekPicker label="Tuần xem" value={week} onChange={setWeek} />
-        <WeekPicker label="So sánh với" value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
+        <WeekPicker label={t("Tuần xem")} value={week} onChange={setWeek} />
+        <WeekPicker label={t("So sánh với")} value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
       </div>
     </div>
   );
@@ -119,6 +123,7 @@ function useAffiliateCtx() {
 function TopCreatorsCard() {
   const { platform, bu } = useFilters();
   const { mode, period, comparePeriod } = useAffiliateCtx();
+  const { t, formatMoney } = usePreferences();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const allRows = useMemo(
@@ -143,12 +148,12 @@ function TopCreatorsCard() {
           setSearch(e.target.value);
           setPage(0);
         }}
-        placeholder="Tìm creator ID..."
+        placeholder={t("Tìm creator ID...")}
         className="mb-3 w-full max-w-[240px] rounded-full border border-border bg-surface px-3 py-1.5 text-[12.5px] text-ink-1 outline-none focus:border-accent"
       />
       {rows.length === 0 ? (
         <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
-          {allRows.length === 0 ? "Không có creator nào khớp bộ lọc ở kỳ này." : `Không tìm thấy creator khớp "${search}".`}
+          {allRows.length === 0 ? t("Không có creator nào khớp bộ lọc ở kỳ này.") : `${t("Không tìm thấy creator khớp")} "${search}".`}
         </p>
       ) : (
         <>
@@ -167,7 +172,7 @@ function TopCreatorsCard() {
                       style={{ width: `${widthPct}%`, background: platformColor[r.platform] }}
                     />
                   </div>
-                  <span className="w-[62px] shrink-0 text-right tabular font-semibold text-ink-1">{formatVnd(r.gmv)}</span>
+                  <span className="w-[62px] shrink-0 text-right tabular font-semibold text-ink-1">{formatMoney(r.gmv)}</span>
                   <span className="w-[58px] shrink-0 text-right">
                     <DeltaTag d={toDelta(r.wowPct)} />
                   </span>
@@ -186,7 +191,8 @@ function TopCreatorsCard() {
           </span>
         ))}
         <span className="text-ink-3">
-          {allRows.length} creator (top 50/kênh đang track){q ? ` · ${rows.length} khớp tìm kiếm` : ""}
+          {allRows.length} {t("creator (top 50/kênh đang track)")}
+          {q ? ` · ${rows.length} ${t("khớp tìm kiếm")}` : ""}
         </span>
       </div>
     </>
@@ -196,41 +202,44 @@ function TopCreatorsCard() {
 function CategoryCard() {
   const { platform, bu } = useFilters();
   const { mode, period } = useAffiliateCtx();
+  const { t, formatMoney } = usePreferences();
   const rows = getCategoryBreakdown(mode, period, platform, bu);
 
   if (rows === null) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">Category chuẩn hoá (L1/L2/L3) chỉ có ở dữ liệu Shopee.</p>;
+    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">{t("Category chuẩn hoá (L1/L2/L3) chỉ có ở dữ liệu Shopee.")}</p>;
   }
   if (rows.length === 0) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">Không có dữ liệu cho kỳ này.</p>;
+    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">{t("Không có dữ liệu cho kỳ này.")}</p>;
   }
-  return <BuGroupedBar data={rows} height={Math.max(140, rows.length * 44)} />;
+  return <BuGroupedBar data={rows} height={Math.max(140, rows.length * 44)} valueFormatter={formatMoney} />;
 }
 
 function CampaignCard() {
   const { platform, bu } = useFilters();
   const { mode, period } = useAffiliateCtx();
+  const { t, formatMoney } = usePreferences();
   const rows = getCampaignBreakdown(mode, period, platform, bu);
 
   if (rows === null) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">Campaign Type (Mở rộng/Mục tiêu) chỉ có ở dữ liệu Shopee.</p>;
+    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">{t("Campaign Type (Mở rộng/Mục tiêu) chỉ có ở dữ liệu Shopee.")}</p>;
   }
   if (rows.length === 0) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">Không có dữ liệu cho kỳ này.</p>;
+    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">{t("Không có dữ liệu cho kỳ này.")}</p>;
   }
-  return <BuGroupedBar data={rows} height={Math.max(100, rows.length * 44)} />;
+  return <BuGroupedBar data={rows} height={Math.max(100, rows.length * 44)} valueFormatter={formatMoney} />;
 }
 
 function GmvSourceCard() {
   const { platform, bu } = useFilters();
   const { mode, period } = useAffiliateCtx();
+  const { t, formatMoney } = usePreferences();
   const rows = getGmvSourceBreakdown(mode, period, platform, bu);
 
   if (rows === null) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">Cột GMV Source (Seller/Affiliate/MCN) chỉ có ở dữ liệu TikTok Shop.</p>;
+    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">{t("Cột GMV Source (Seller/Affiliate/MCN) chỉ có ở dữ liệu TikTok Shop.")}</p>;
   }
   if (rows.length === 0) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">Không có dữ liệu cho kỳ này.</p>;
+    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">{t("Không có dữ liệu cho kỳ này.")}</p>;
   }
 
   const buTotals: Record<string, number> = { PC: 0, MCC: 0 };
@@ -248,7 +257,7 @@ function GmvSourceCard() {
     });
 
   if (stackedData.length === 0) {
-    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">Không có dữ liệu cho kỳ này.</p>;
+    return <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">{t("Không có dữ liệu cho kỳ này.")}</p>;
   }
 
   return (
@@ -257,7 +266,7 @@ function GmvSourceCard() {
       <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-ink-3">
         {busShown.map((b) => (
           <span key={b}>
-            {b}: {formatVnd(buTotals[b])}
+            {b}: {formatMoney(buTotals[b])}
           </span>
         ))}
       </div>
@@ -304,6 +313,7 @@ function SortableHeader({
 function CreatorDetailTable() {
   const { platform, bu } = useFilters();
   const { mode, period, comparePeriod } = useAffiliateCtx();
+  const { t, formatMoney } = usePreferences();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortState>(null);
@@ -346,18 +356,18 @@ function CreatorDetailTable() {
             setSearch(e.target.value);
             setPage(0);
           }}
-          placeholder="Tìm creator ID..."
+          placeholder={t("Tìm creator ID...")}
           className="w-full max-w-[240px] rounded-full border border-border bg-surface px-3 py-1.5 text-[12.5px] text-ink-1 outline-none focus:border-accent"
         />
         <span className="text-[12px] text-ink-2">
-          {allRows.length} creator{q ? ` · ${rows.length} khớp tìm kiếm` : ""} ·{" "}
-          <span className="font-semibold text-good-ink">{newCount} mới</span>
+          {allRows.length} {t("creator")}{q ? ` · ${rows.length} ${t("khớp tìm kiếm")}` : ""} ·{" "}
+          <span className="font-semibold text-good-ink">{newCount} {t("Mới")}</span>
         </span>
       </div>
 
       {rows.length === 0 ? (
         <p className="rounded-lg bg-surface-alt px-3 py-8 text-center text-[12.5px] text-ink-3">
-          {allRows.length === 0 ? "Không có creator nào khớp bộ lọc ở kỳ này." : `Không tìm thấy creator khớp "${search}".`}
+          {allRows.length === 0 ? t("Không có creator nào khớp bộ lọc ở kỳ này.") : `${t("Không tìm thấy creator khớp")} "${search}".`}
         </p>
       ) : (
         <>
@@ -365,14 +375,14 @@ function CreatorDetailTable() {
             <table className="w-full min-w-[760px] text-left text-[12.5px]">
               <thead>
                 <tr className="border-b border-border text-[11px] uppercase tracking-wide text-ink-3">
-                  <th className="py-2 pr-3 font-bold">Creator</th>
-                  <th className="py-2 pr-3 font-bold">Kênh</th>
-                  <SortableHeader label="Đơn" sortKey="orders" sort={sort} onSort={handleSort} />
-                  <SortableHeader label="GMV" sortKey="gmv" sort={sort} onSort={handleSort} />
-                  <SortableHeader label="Payout" sortKey="payout" sort={sort} onSort={handleSort} />
-                  <th className="py-2 pr-3 font-bold">ROAS</th>
-                  <th className="py-2 pr-3 font-bold">So sánh GMV</th>
-                  <SortableHeader label="Mới?" sortKey="isNew" sort={sort} onSort={handleSort} />
+                  <th className="py-2 pr-3 font-bold">{t("Creator")}</th>
+                  <th className="py-2 pr-3 font-bold">{t("Kênh")}</th>
+                  <SortableHeader label={t("Đơn")} sortKey="orders" sort={sort} onSort={handleSort} />
+                  <SortableHeader label={t("GMV")} sortKey="gmv" sort={sort} onSort={handleSort} />
+                  <SortableHeader label={t("Payout")} sortKey="payout" sort={sort} onSort={handleSort} />
+                  <th className="py-2 pr-3 font-bold">{t("ROAS")}</th>
+                  <th className="py-2 pr-3 font-bold">{t("So sánh GMV")}</th>
+                  <SortableHeader label={t("Mới?")} sortKey="isNew" sort={sort} onSort={handleSort} />
                 </tr>
               </thead>
               <tbody>
@@ -388,8 +398,8 @@ function CreatorDetailTable() {
                       </span>
                     </td>
                     <td className="py-2 pr-3 tabular">{r.orders.toLocaleString("vi-VN")}</td>
-                    <td className="py-2 pr-3 tabular font-semibold">{formatVnd(r.gmv)}</td>
-                    <td className="py-2 pr-3 tabular">{formatVnd(r.payout)}</td>
+                    <td className="py-2 pr-3 tabular font-semibold">{formatMoney(r.gmv)}</td>
+                    <td className="py-2 pr-3 tabular">{formatMoney(r.payout)}</td>
                     <td className="py-2 pr-3 tabular">{r.roas.toFixed(1)}x</td>
                     <td className="py-2 pr-3">
                       <DeltaTag d={toDelta(r.wowPct)} />
@@ -397,7 +407,7 @@ function CreatorDetailTable() {
                     <td className="py-2">
                       {r.isNew ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-good-bg px-2 py-0.5 text-[11px] font-bold text-good-ink">
-                          <BadgeCheck size={12} /> Mới
+                          <BadgeCheck size={12} /> {t("Mới")}
                         </span>
                       ) : (
                         <span className="text-ink-3">—</span>
@@ -417,20 +427,21 @@ function CreatorDetailTable() {
 
 export function AffiliateDashboard() {
   const ctxValue = usePeriodMode();
+  const { t, lang } = usePreferences();
   const period = ctxValue.period;
   const comparePeriod = ctxValue.comparePeriod;
-  const periodLabel = getPeriodLabel(ctxValue.mode, period);
-  const compareLabel = comparePeriod ? getPeriodLabel(ctxValue.mode, comparePeriod) : null;
+  const periodLabel = translateMonthLabel(getPeriodLabel(ctxValue.mode, period), lang);
+  const compareLabel = comparePeriod ? translateMonthLabel(getPeriodLabel(ctxValue.mode, comparePeriod), lang) : null;
 
   return (
     <AffiliateCtx.Provider value={ctxValue}>
       <div className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-[22px] font-bold text-ink-1">Affiliate &amp; Creator</h1>
+            <h1 className="text-[22px] font-bold text-ink-1">{t("Affiliate & Creator")}</h1>
             <p className="text-[13px] text-ink-2">
-              Hiệu suất creator/affiliate — nguồn: 5 sheet chi tiết (Shopee, Lazada, TikTok Shop ×
-              PC/MCC). Đổi <b>Platform/BU</b> ở thanh lọc phía trên; chọn kỳ báo cáo ở đây.
+              {t("Hiệu suất creator/affiliate")} — {t("nguồn: 5 sheet chi tiết (Shopee, Lazada, TikTok Shop × PC/MCC).")}{" "}
+              {t("Đổi")} <b>Platform/BU</b> {t("ở thanh lọc phía trên; chọn kỳ báo cáo ở đây.")}
             </p>
           </div>
           <PeriodModeBar />
@@ -438,50 +449,48 @@ export function AffiliateDashboard() {
 
         <Card>
           <CardHeader
-            title="Top Creator / Affiliate theo GMV"
-            kind="Bar ngang"
-            desc={`Top 10 mỗi trang — ${periodLabel}, tô màu theo platform.`}
+            title={t("Top Creator / Affiliate theo GMV")}
+            kind={t("Bar ngang")}
+            desc={`${t("Top 10 mỗi trang —")} ${periodLabel}${t(", tô màu theo platform.")}`}
           />
           <TopCreatorsCard />
           <CardFootnote>
-            Nguồn: group theo Affiliate Name (Shopee) / Creator Username (TikTok Shop). Lazada
-            không có dữ liệu creator ở cấp giao dịch.
+            {t("Nguồn: group theo Affiliate Username (Shopee) / Creator Username (TikTok Shop). Lazada không có dữ liệu creator ở cấp giao dịch.")}
           </CardFootnote>
         </Card>
 
         <div className="grid items-start gap-4 md:grid-cols-2">
           <Card>
-            <CardHeader title="GMV theo Category sản phẩm" kind="Grouped bar" desc={`Shopee — cột L1 Global Category, ${periodLabel}.`} />
+            <CardHeader title={t("GMV theo Category sản phẩm")} kind={t("Grouped bar")} desc={`${t("Shopee — cột L1 Global Category,")} ${periodLabel}.`} />
             <CategoryCard />
-            <CardFootnote>Nguồn: VN Shopee PC&apos;26 + MCC&apos;26.</CardFootnote>
+            <CardFootnote>{t("Nguồn: VN Shopee PC'26 + MCC'26.")}</CardFootnote>
           </Card>
           <Card>
-            <CardHeader title="GMV theo Loại chiến dịch" kind="Grouped bar" desc={`Shopee — Mở rộng vs. Mục tiêu, ${periodLabel}.`} />
+            <CardHeader title={t("GMV theo Loại chiến dịch")} kind={t("Grouped bar")} desc={`${t("Shopee — Mở rộng vs. Mục tiêu,")} ${periodLabel}.`} />
             <CampaignCard />
-            <CardFootnote>Nguồn: VN Shopee PC&apos;26 + MCC&apos;26 — cột Campaign Type.</CardFootnote>
+            <CardFootnote>{t("Nguồn: VN Shopee PC'26 + MCC'26 — cột Campaign Type.")}</CardFootnote>
           </Card>
         </div>
 
         <Card>
           <CardHeader
-            title="GMV theo nguồn Creator (GMV Source)"
-            kind="Stacked bar 100%"
-            desc={`TikTok Shop — Seller Creator / Affiliate Creator / MCN, ${periodLabel}.`}
+            title={t("GMV theo nguồn Creator (GMV Source)")}
+            kind={t("Stacked bar 100%")}
+            desc={`${t("TikTok Shop — Seller Creator / Affiliate Creator / MCN,")} ${periodLabel}.`}
           />
           <GmvSourceCard />
-          <CardFootnote>Nguồn: (Updated) VN TTS PC&apos;26 + MCC&apos;26 — cột GMV Source.</CardFootnote>
+          <CardFootnote>{t("Nguồn: (Updated) VN TTS PC'26 + MCC'26 — cột GMV Source.")}</CardFootnote>
         </Card>
 
         <Card>
           <CardHeader
-            title="Chi tiết Creator"
-            kind="Table"
-            desc={`${periodLabel}${compareLabel ? ` · So sánh với ${compareLabel}` : ""} — Shopee + TikTok Shop.`}
+            title={t("Chi tiết Creator")}
+            kind={t("Bảng")}
+            desc={`${periodLabel}${compareLabel ? `${t(" · So sánh với ")}${compareLabel}` : ""}${t(" — Shopee + TikTok Shop.")}`}
           />
           <CreatorDetailTable />
           <CardFootnote>
-            ROAS = GMV ÷ Payout của đúng kỳ đang xem. &quot;Mới&quot; = creator chưa từng có doanh
-            thu ở bất kỳ kỳ nào trước đó (trong phạm vi top-50/kênh đang track).
+            {t("ROAS = GMV ÷ Payout của đúng kỳ đang xem. \"Mới\" = creator chưa từng có doanh thu ở bất kỳ kỳ nào trước đó (trong phạm vi top-50/kênh đang track).")}
           </CardFootnote>
         </Card>
       </div>
