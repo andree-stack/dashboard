@@ -32,7 +32,9 @@ export function StackedPercentBar({
         barCategoryGap={22}
       >
         <XAxis type="number" hide domain={[0, 1]} />
-        <YAxis type="category" dataKey="bu" width={40} tickLine={false} axisLine={false} />
+        {/* interval={0}: Recharts defaults category axes to interval="preserveEnd", which can silently
+            drop a tick label (bars still render) when it misjudges label spacing at small heights. */}
+        <YAxis type="category" dataKey="bu" width={40} tickLine={false} axisLine={false} interval={0} />
         <Tooltip formatter={(v) => `${(Number(v ?? 0) * 100).toFixed(1)}%`} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         {keys.map((k, i) => (
