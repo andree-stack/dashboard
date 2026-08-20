@@ -10,11 +10,11 @@ import type { Lang } from "@/lib/i18n";
 import type { Currency } from "@/components/preferences-context";
 
 const tabs = [
-  { href: "/overview", label: "Tổng quan", icon: LayoutDashboard },
-  { href: "/weekly", label: "Weekly", icon: CalendarRange },
-  { href: "/affiliate", label: "Affiliate & Creator", icon: Users },
-  { href: "/operations", label: "Vận hành", icon: Activity },
-  { href: "/content", label: "Content & Chiến dịch", icon: FolderClock },
+  { href: "/overview", label: "Tổng quan", icon: LayoutDashboard, color: "var(--color-accent)" },
+  { href: "/weekly", label: "Theo tuần", icon: CalendarRange, color: "var(--color-s-tts)" },
+  { href: "/affiliate", label: "Affiliate & Creator", icon: Users, color: "var(--color-s-4)" },
+  { href: "/operations", label: "Vận hành", icon: Activity, color: "var(--color-s-lazada)" },
+  { href: "/content", label: "Content & Chiến dịch", icon: FolderClock, color: "var(--color-s-shopee)" },
 ];
 
 function PrefToggle<T extends string>({
@@ -70,14 +70,14 @@ export function TopNav({ userName }: { userName: string }) {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors",
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold text-ink-2 transition-colors hover:bg-surface-alt"
+                style={
                   active
-                    ? "bg-accent-soft text-accent-ink"
-                    : "text-ink-2 hover:bg-surface-alt"
-                )}
+                    ? { background: `color-mix(in srgb, ${tab.color} 14%, transparent)`, color: tab.color }
+                    : undefined
+                }
               >
-                <Icon size={14} />
+                <Icon size={14} style={{ color: active ? tab.color : undefined }} />
                 {t(tab.label)}
               </Link>
             );
@@ -121,10 +121,12 @@ export function TopNav({ userName }: { userName: string }) {
             <Link
               key={tab.href}
               href={tab.href}
-              className={cn(
-                "shrink-0 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold",
-                active ? "bg-accent-soft text-accent-ink" : "text-ink-2"
-              )}
+              className="shrink-0 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold text-ink-2"
+              style={
+                active
+                  ? { background: `color-mix(in srgb, ${tab.color} 14%, transparent)`, color: tab.color }
+                  : undefined
+              }
             >
               {t(tab.label)}
             </Link>

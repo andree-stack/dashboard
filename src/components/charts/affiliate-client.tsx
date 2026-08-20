@@ -4,7 +4,6 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { ArrowUp, ArrowDown, Minus, ChevronLeft, ChevronRight, BadgeCheck } from "lucide-react";
 import { useFilters } from "@/components/filter-context";
 import { usePreferences } from "@/components/preferences-context";
-import { WeekPicker } from "@/components/week-picker";
 import { BuGroupedBar } from "@/components/charts/bu-grouped-bar";
 import { StackedPercentBar } from "@/components/charts/stacked-percent-bar";
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
@@ -15,7 +14,6 @@ import {
   getCategoryBreakdown,
   getCampaignBreakdown,
   getGmvSourceBreakdown,
-  type PeriodMode,
 } from "@/lib/affiliate-data";
 import { translateMonthLabel } from "@/lib/i18n";
 import { platformColor } from "@/lib/data";
@@ -68,47 +66,16 @@ function Pager({ page, totalPages, onChange }: { page: number; totalPages: numbe
   );
 }
 
-/** Toggle Theo tháng / Theo tuần — dùng chung state month/week/compareWeek đã có trong FilterContext. */
+/** Toggle Theo tháng / Theo tuần — sống trong FilterContext để thanh filter sticky ở layout
+    (filter-bar.tsx) cũng hiển thị chung được, thay vì chỉ riêng trang này. */
 function usePeriodMode() {
-  const [mode, setMode] = useState<PeriodMode>("month");
-  const { month, week, compareWeek, setWeek, setCompareWeek } = useFilters();
+  const { affiliateMode: mode, setAffiliateMode: setMode, month, week, compareWeek, setWeek, setCompareWeek } =
+    useFilters();
 
   const period = mode === "month" ? month : week;
   const comparePeriod = mode === "month" ? getPreviousPeriod("month", month) : compareWeek;
 
   return { mode, setMode, period, comparePeriod, week, compareWeek, setWeek, setCompareWeek };
-}
-
-function PeriodModeBar() {
-  const { mode, setMode, week, compareWeek, setWeek, setCompareWeek } = useAffiliateCtx();
-  const { t } = usePreferences();
-  return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="flex flex-col gap-1">
-        <span className="text-[10.5px] font-bold uppercase tracking-wide text-ink-3">{t("Chế độ xem")}</span>
-        <div className="flex overflow-hidden rounded-full border border-border">
-          {(["month", "week"] as PeriodMode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={cn(
-                "h-9 px-3.5 text-[12.5px] font-semibold",
-                mode === m ? "bg-accent-soft text-accent-ink" : "bg-surface text-ink-2"
-              )}
-            >
-              {m === "month" ? t("Theo tháng") : t("Theo tuần")}
-            </button>
-          ))}
-        </div>
-      </div>
-      {/* Luôn giữ 2 WeekPicker trong layout (chỉ ẩn bằng visibility) để đổi Theo tháng/Theo tuần
-          không làm cả hàng filter đổi bề rộng rồi nhảy xuống dòng khác. */}
-      <div className={cn("flex gap-2", mode !== "week" && "invisible")} aria-hidden={mode !== "week"}>
-        <WeekPicker label={t("Tuần xem")} value={week} onChange={setWeek} />
-        <WeekPicker label={t("So sánh với")} value={compareWeek} onChange={setCompareWeek} excludeWeek={week} />
-      </div>
-    </div>
-  );
 }
 
 // Share the period-mode state across all sections on the page via a tiny local context.
@@ -375,6 +342,7 @@ function CreatorDetailTable() {
             <table className="w-full min-w-[760px] text-left text-[12.5px]">
               <thead>
                 <tr className="border-b border-border text-[11px] uppercase tracking-wide text-ink-3">
+                  <th className="py-2 pr-3 font-bold">#</th>
                   <th className="py-2 pr-3 font-bold">{t("Creator")}</th>
                   <th className="py-2 pr-3 font-bold">{t("Kênh")}</th>
                   <SortableHeader label={t("Đơn")} sortKey="orders" sort={sort} onSort={handleSort} />
@@ -386,8 +354,9 @@ function CreatorDetailTable() {
                 </tr>
               </thead>
               <tbody>
-                {pageRows.map((r) => (
+                {pageRows.map((r, i) => (
                   <tr key={`${r.platform}-${r.name}`} className="border-b border-border/60 last:border-0">
+                    <td className="py-2 pr-3 tabular text-ink-3">{effectivePage * PAGE_SIZE + i + 1}</td>
                     <td className="max-w-[220px] truncate py-2 pr-3 font-semibold text-ink-1" title={r.name}>
                       {r.name}
                     </td>
@@ -436,15 +405,12 @@ export function AffiliateDashboard() {
   return (
     <AffiliateCtx.Provider value={ctxValue}>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-[22px] font-bold text-ink-1">{t("Affiliate & Creator")}</h1>
-            <p className="text-[13px] text-ink-2">
-              {t("Hiệu suất creator/affiliate")} — {t("nguồn: 5 sheet chi tiết (Shopee, Lazada, TikTok Shop × PC/MCC).")}{" "}
-              {t("Đổi")} <b>Platform/BU</b> {t("ở thanh lọc phía trên; chọn kỳ báo cáo ở đây.")}
-            </p>
-          </div>
-          <PeriodModeBar />
+        <div>
+          <h1 className="text-[22px] font-bold text-ink-1">{t("Affiliate & Creator")}</h1>
+          <p className="text-[13px] text-ink-2">
+            {t("Hiệu suất creator/affiliate")} — {t("nguồn: 5 sheet chi tiết (Shopee, Lazada, TikTok Shop × PC/MCC).")}{" "}
+            {t("Đổi")} <b>Platform/BU</b>, <b>{t("Chế độ xem")}</b> {t("và kỳ báo cáo ở thanh lọc phía trên.")}
+          </p>
         </div>
 
         <Card>

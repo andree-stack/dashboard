@@ -135,7 +135,7 @@ const DICT: Record<string, string> = {
   "ROAS = GMV ÷ Payout của đúng kỳ đang xem. \"Mới\" = creator chưa từng có doanh thu ở bất kỳ kỳ nào trước đó (trong phạm vi top-50/kênh đang track).":
     "ROAS = GMV ÷ Payout for the exact period shown. \"New\" = a creator with no revenue in any prior period (within the tracked top-50/channel scope).",
   "Đổi": "Change",
-  "ở thanh lọc phía trên; chọn kỳ báo cáo ở đây.": "in the filter bar above; pick the report period here.",
+  "và kỳ báo cáo ở thanh lọc phía trên.": "and report period in the filter bar above.",
   "nguồn: 5 sheet chi tiết (Shopee, Lazada, TikTok Shop × PC/MCC).":
     "source: 5 transaction detail sheets (Shopee, Lazada, TikTok Shop × PC/MCC).",
 
