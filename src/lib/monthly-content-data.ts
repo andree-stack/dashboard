@@ -29,14 +29,14 @@ export const monthlyContentRaw: Record<
       T5: { "(Không có Content Type)": 38933000, "External Traffic": 1461700 },
       T6: { "(Không có Content Type)": 89458000, "Video": 62975303, "External Traffic": 19330165, "Showcase": 4984610 },
       T7: { "(Không có Content Type)": 197266140, "External Traffic": 93319750, "Video": 75430758, "Showcase": 65587337 },
-      T8: { "(Không có Content Type)": 165436624, "External Traffic": 55959164, "Video": 42040192, "Showcase": 1918934 },
+      T8: { "(Không có Content Type)": 166119524, "External Traffic": 103276967, "Showcase": 5011644, "Video": 110442683 },
     },
     MCC: {
       T4: { "Video": 116046743, "External Traffic": 64651238, "(Không có Content Type)": 47250731, "Showcase": 30941426, "Livestream": 3546059 },
       T5: { "Video": 120193524, "External Traffic": 59828817, "(Không có Content Type)": 53775861, "Showcase": 47814061, "Livestream": 11438834 },
       T6: { "(Không có Content Type)": 347333442, "Video": 171432533, "External Traffic": 104092208, "Showcase": 62808210, "Livestream": 12264318 },
       T7: { "Video": 168850671, "(Không có Content Type)": 95065450, "External Traffic": 89090656, "Showcase": 61298461, "Livestream": 1518524 },
-      T8: { "Video": 59722226, "External Traffic": 48741758, "(Không có Content Type)": 23112833, "Showcase": 14019325, "Livestream": 12500810 },
+      T8: { "(Không có Content Type)": 33936831, "External Traffic": 117914876, "Livestream": 20066103, "Showcase": 25728931, "Video": 140228092 },
     },
   },
 };

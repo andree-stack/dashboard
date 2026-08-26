@@ -167,25 +167,29 @@ export const weeklyChannelData: Partial<Record<WeekKey, Record<string, WeeklyCha
     "Lazada-MCC": { gmv: 1038400, payout: 84690, orders: 3, avgCommissionPct: 8.16, roas: 12.26, completionRatePct: null, refundRatePct: null },
     "Shopee-MCC": { gmv: 47257709, payout: 3473138, orders: 66, avgCommissionPct: 7.35, roas: 13.61, completionRatePct: 81.28, refundRatePct: 12.47 },
     "Shopee-PC": { gmv: 271335117, payout: 16398363, orders: 297, avgCommissionPct: 6.04, roas: 16.55, completionRatePct: 80.69, refundRatePct: 11.36 },
-    "TikTok Shop-MCC": { gmv: 73695530, payout: 3076697, orders: 233, avgCommissionPct: 4.17, roas: 23.95, completionRatePct: 53.49, refundRatePct: 0.29 },
-    "TikTok Shop-PC": { gmv: 161778521, payout: 38229, orders: 75, avgCommissionPct: 0.02, roas: 4231.83, completionRatePct: 0.41, refundRatePct: 0.0 },
+    "TikTok Shop-MCC": { gmv: 73695530, payout: 3076697, orders: 233, avgCommissionPct: 4.17, roas: 23.95, completionRatePct: 53.49, refundRatePct: 0.59 },
+    "TikTok Shop-PC": { gmv: 161778521, payout: 367049, orders: 75, avgCommissionPct: 0.23, roas: 440.75, completionRatePct: 4.67, refundRatePct: 0 },
   },
   W19: {
     "Lazada-MCC": { gmv: 268000, payout: 22500, orders: 1, avgCommissionPct: 8.4, roas: 11.91, completionRatePct: null, refundRatePct: null },
     "Shopee-MCC": { gmv: 128723372, payout: 8211307, orders: 125, avgCommissionPct: 6.38, roas: 15.68, completionRatePct: 100, refundRatePct: 14.61 },
     "Shopee-PC": { gmv: 465187891, payout: 27295013, orders: 523, avgCommissionPct: 5.87, roas: 17.04, completionRatePct: 99.72, refundRatePct: 12.72 },
-    "TikTok Shop-MCC": { gmv: 139437102, payout: 2388307, orders: 357, avgCommissionPct: 1.71, roas: 58.38, completionRatePct: 20.99, refundRatePct: 0.57 },
-    "TikTok Shop-PC": { gmv: 228119656, payout: 0, orders: 256, avgCommissionPct: 0.0, roas: 0, completionRatePct: 0.0, refundRatePct: 0.0 },
+    "TikTok Shop-MCC": { gmv: 139437102, payout: 6351199, orders: 357, avgCommissionPct: 4.55, roas: 21.95, completionRatePct: 57.51, refundRatePct: 3.55 },
+    "TikTok Shop-PC": { gmv: 228119656, payout: 2909911, orders: 256, avgCommissionPct: 1.28, roas: 78.39, completionRatePct: 19.3, refundRatePct: 0.26 },
   },
   W20: {
     "Lazada-MCC": { gmv: 561400, payout: 45000, orders: 2, avgCommissionPct: 8.02, roas: 12.48, completionRatePct: null, refundRatePct: null },
     "Shopee-MCC": { gmv: 50660946, payout: 3221175, orders: 81, avgCommissionPct: 6.36, roas: 15.73, completionRatePct: 100, refundRatePct: 18.07 },
     "Shopee-PC": { gmv: 306116016, payout: 17860274, orders: 370, avgCommissionPct: 5.83, roas: 17.14, completionRatePct: 99.79, refundRatePct: 8.9 },
+    "TikTok Shop-PC": { gmv: 84755848, payout: 2707644, orders: 86, avgCommissionPct: 3.19, roas: 31.3, completionRatePct: 48.31, refundRatePct: 0 },
+    "TikTok Shop-MCC": { gmv: 103859823, payout: 5052251, orders: 244, avgCommissionPct: 4.86, roas: 20.56, completionRatePct: 54.9, refundRatePct: 2.08 },
   },
   W21: {
     "Lazada-MCC": { gmv: 840200, payout: 66690, orders: 3, avgCommissionPct: 7.94, roas: 12.6, completionRatePct: null, refundRatePct: null },
     "Shopee-MCC": { gmv: 53360829, payout: 3309098, orders: 72, avgCommissionPct: 6.2, roas: 16.13, completionRatePct: 42.09, refundRatePct: 13.19 },
     "Shopee-PC": { gmv: 281034862, payout: 13149319, orders: 299, avgCommissionPct: 4.68, roas: 21.37, completionRatePct: 45.85, refundRatePct: 5.09 },
+    "TikTok Shop-PC": { gmv: 34740056, payout: 496375, orders: 49, avgCommissionPct: 1.43, roas: 69.99, completionRatePct: 22.05, refundRatePct: 0 },
+    "TikTok Shop-MCC": { gmv: 75918058, payout: 1436291, orders: 187, avgCommissionPct: 1.89, roas: 52.86, completionRatePct: 25.43, refundRatePct: 0.54 },
   },
 };
 
