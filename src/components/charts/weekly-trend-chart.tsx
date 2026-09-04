@@ -12,12 +12,12 @@ import {
 } from "recharts";
 import { useFilters } from "@/components/filter-context";
 import { usePreferences } from "@/components/preferences-context";
-import { getTrendSeries } from "@/lib/data";
+import { getWeeklyTrendSeries, type WeekKey } from "@/lib/weekly-data";
 
-export function TrendChart() {
-  const { month, platform, bu } = useFilters();
+export function WeeklyTrendChart({ week }: { week: WeekKey }) {
+  const { platform, bu } = useFilters();
   const { lang, t, formatMoney } = usePreferences();
-  const { series, rows } = getTrendSeries(platform, bu);
+  const { series, rows } = getWeeklyTrendSeries(platform, bu);
 
   const modeLabel =
     series.length === 1
@@ -33,14 +33,14 @@ export function TrendChart() {
   return (
     <div>
       <p className="mb-2 text-[12px] text-ink-2">
-        {modeLabel} — {t("target là tổng target trong phạm vi đang lọc.")}
+        {modeLabel} — {t("GMV theo tuần, không có target tuần.")}
       </p>
       <ResponsiveContainer width="100%" height={280}>
         <ComposedChart data={rows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid vertical={false} strokeDasharray="3 3" />
-          <XAxis dataKey="month" tickLine={false} axisLine={false} />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} interval={2} tick={{ fontSize: 11 }} />
           <ReferenceLine
-            x={month}
+            x={rows.find((r) => r.week === week)?.label}
             stroke="var(--color-accent)"
             strokeDasharray="2 2"
             label={{ value: t("Đang xem"), position: "insideTopLeft", fill: "var(--color-accent-ink)", fontSize: 10 }}
@@ -48,16 +48,7 @@ export function TrendChart() {
           <YAxis tickFormatter={(v) => formatMoney(v)} width={72} tickLine={false} axisLine={false} />
           <Tooltip
             formatter={(value) => (typeof value === "number" ? formatMoney(value) : String(value ?? "—"))}
-            labelFormatter={(label) => `${t("Tháng")} ${String(label).replace("T", "")}`}
-          />
-          <Line
-            type="monotone"
-            dataKey="target"
-            stroke="var(--color-ink-3)"
-            strokeWidth={2}
-            strokeDasharray="5 4"
-            dot={false}
-            name="Target"
+            labelFormatter={(label) => `${t("Tuần")} ${String(label)}`}
           />
           {series.map((s) => (
             <Line
@@ -74,8 +65,8 @@ export function TrendChart() {
                     key={key}
                     cx={cx}
                     cy={cy}
-                    r={payload.isMtd ? 4.5 : 3}
-                    fill={payload.isMtd ? "var(--color-surface)" : s.color}
+                    r={payload.isPartial ? 4.5 : 3}
+                    fill={payload.isPartial ? "var(--color-surface)" : s.color}
                     stroke={s.color}
                     strokeWidth={2}
                   />
@@ -89,8 +80,8 @@ export function TrendChart() {
       </ResponsiveContainer>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-ink-2">
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-0 w-4 border-t-2 border-dashed border-ink-3" />
-          {t("Target")}
+          <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-ink-3 bg-surface" />
+          {t("Tuần chưa trọn (MTD)")}
         </span>
         {series.map((s) => (
           <span key={s.key} className="inline-flex items-center gap-1.5">
