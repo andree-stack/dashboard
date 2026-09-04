@@ -55,8 +55,8 @@ const DICT: Record<string, string> = {
     "GMV actual vs. target, overall channel health — source: VN RunRate'26. Change Report period in the filter bar above to view by month.",
   "GMV Thực tế vs. Target theo tháng — FY2026": "GMV Actual vs. Target by month — FY2026",
   "Line chart": "Line chart",
-  "1 trục — VND. Nét đứt = Target, nét liền = Thực tế, điểm T8 để rỗng vì là số MTD.":
-    "Single axis. Dashed = Target, solid = Actual, T8 is hollow because it's MTD.",
+  "1 trục — VND. Nét đứt = Target, nét liền = Thực tế, tháng đang chạy dở (nếu có) hiển thị điểm rỗng vì là số MTD.":
+    "Single axis. Dashed = Target, solid = Actual, the in-progress month (if any) is hollow because it's MTD.",
   "Nguồn: VN RunRate'26 — mục \"GMV TARGET 2026\" & \"GMV ACTUALISATION 2026\".":
     "Source: VN RunRate'26 — \"GMV TARGET 2026\" & \"GMV ACTUALISATION 2026\" sections.",
   "GMV theo Platform × BU": "GMV by Platform × BU",
@@ -82,8 +82,8 @@ const DICT: Record<string, string> = {
   "và": "and",
   "ở thanh lọc phía trên.": "in the filter bar above.",
   "GMV theo tuần": "GMV by week",
-  "20 tuần gần nhất (30/03–16/08/2026). Vòng tròn rỗng = tuần chưa trọn 7 ngày.":
-    "Last 20 weeks (30/03–16/08/2026). Hollow circle = week not yet complete.",
+  "Toàn bộ các tuần có dữ liệu, từ 30/03/2026 đến nay. Vòng tròn rỗng = tuần chưa trọn 7 ngày.":
+    "All weeks with data, from 30/03/2026 to date. Hollow circle = week not yet complete.",
   "Nguồn: 5 sheet chi tiết giao dịch, group theo Order Time / Time Created / Date của từng đơn hàng.":
     "Source: 5 transaction detail sheets, grouped by each order's Order Time / Time Created / Date.",
   "Kênh cần chú ý (GMV lệch ≥ 15% so với tuần so sánh)": "Channels to watch (GMV shift ≥ 15% vs. compare week)",

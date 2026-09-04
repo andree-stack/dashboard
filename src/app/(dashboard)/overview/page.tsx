@@ -29,7 +29,7 @@ export default function OverviewPage() {
         <CardHeader
           title={t("GMV Thực tế vs. Target theo tháng — FY2026")}
           kind={t("Line chart")}
-          desc={t("1 trục — VND. Nét đứt = Target, nét liền = Thực tế, điểm T8 để rỗng vì là số MTD.")}
+          desc={t("1 trục — VND. Nét đứt = Target, nét liền = Thực tế, tháng đang chạy dở (nếu có) hiển thị điểm rỗng vì là số MTD.")}
         />
         <TrendChart />
         <CardFootnote>

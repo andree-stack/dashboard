@@ -337,7 +337,7 @@ export function WeeklyDashboard() {
         <CardHeader
           title={t("GMV theo tuần")}
           kind={t("Line chart")}
-          desc={t("20 tuần gần nhất (30/03–16/08/2026). Vòng tròn rỗng = tuần chưa trọn 7 ngày.")}
+          desc={t("Toàn bộ các tuần có dữ liệu, từ 30/03/2026 đến nay. Vòng tròn rỗng = tuần chưa trọn 7 ngày.")}
         />
         <WeeklyTrendChart week={week} />
         <CardFootnote>
