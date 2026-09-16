@@ -1,98 +1,90 @@
+"use client";
+
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
-import { KpiCard, KpiRow } from "@/components/kpi-card";
 import { TrendChart } from "@/components/charts/trend-chart";
+import { usePreferences } from "@/components/preferences-context";
 import {
+  KpiRowClient,
   PlatformBuSection,
   TargetAchievementSection,
+  MonthlyContentBreakdownSection,
+  MonthlyChannelTable,
 } from "@/components/charts/overview-client";
-import { kpiSnapshot } from "@/lib/data";
-import { formatVnd, formatPercent, statusForAchievement } from "@/lib/utils";
 
 export default function OverviewPage() {
-  const k = kpiSnapshot;
-  const achTone = statusForAchievement(k.achievementPct);
+  const { t } = usePreferences();
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[22px] font-bold text-ink-1">Tổng quan</h1>
+        <h1 className="text-[22px] font-bold text-ink-1">{t("Tổng quan")}</h1>
         <p className="text-[13px] text-ink-2">
-          GMV thực tế vs. target, sức khoẻ toàn kênh — nguồn: VN RunRate&apos;26.
+          {t("GMV thực tế vs. target, sức khoẻ toàn kênh — nguồn: VN RunRate'26. Đổi Kỳ báo cáo ở thanh lọc phía trên để xem theo từng tháng.")}
         </p>
       </div>
 
-      <KpiRow>
-        <KpiCard label="GMV toàn kênh" value={formatVnd(k.gmvActual)} foot={k.period} />
-        <KpiCard label="Target GMV" value={formatVnd(k.gmvTarget)} foot={k.period} />
-        <KpiCard
-          label="% Đạt Target"
-          value={formatPercent(k.achievementPct)}
-          tone={achTone}
-          toneLabel={achTone === "good" ? "đạt" : achTone === "warn" ? "gần đạt" : "rủi ro"}
-        />
-        <KpiCard
-          label="Tăng trưởng MoM"
-          value={`+${formatPercent(k.momGrowthPct)}`}
-          tone="good"
-          toneLabel="▲ tốt"
-        />
-        <KpiCard
-          label="Avg Commission % (blend)"
-          value={formatPercent(k.avgCommissionPct, 2)}
-          foot="3 kênh MCC đang chạy"
-        />
-        <KpiCard label="ROAS toàn kênh (blend)" value={`${k.roasBlend.toFixed(1)}x`} foot={k.period} />
-        <KpiCard
-          label="Tỷ lệ đơn Hoàn thành"
-          value={formatPercent(k.completionRatePct)}
-          foot="ví dụ Shopee PC"
-        />
-        <KpiCard
-          label="Tỷ lệ hoàn (Refund)"
-          value={formatPercent(k.refundPct)}
-          tone="good"
-          toneLabel="thấp"
-          foot="ví dụ Shopee PC"
-        />
-      </KpiRow>
+      <KpiRowClient />
 
       <Card>
         <CardHeader
-          title="GMV Thực tế vs. Target theo tháng — FY2026"
-          kind="Line chart"
-          desc="1 trục — VND. Target nét đứt cả năm; Thực tế nét liền, điểm T8 để rỗng vì là số MTD."
+          title={t("GMV Thực tế vs. Target theo tháng — FY2026")}
+          kind={t("Line chart")}
+          desc={t("1 trục — VND. Nét đứt = Target, nét liền = Thực tế, tháng đang chạy dở (nếu có) hiển thị điểm rỗng vì là số MTD.")}
         />
         <TrendChart />
         <CardFootnote>
-          Nguồn: VN RunRate&apos;26 — mục &quot;GMV TARGET 2026&quot; &amp; &quot;GMV
-          ACTUALISATION 2026&quot;.
+          {t("Nguồn: VN RunRate'26 — mục \"GMV TARGET 2026\" & \"GMV ACTUALISATION 2026\".")}
         </CardFootnote>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid items-start gap-4 md:grid-cols-2">
         <Card>
           <CardHeader
-            title="GMV theo Platform × BU"
-            kind="Grouped bar"
-            desc="Tháng 5/2026, thực tế."
+            title={t("GMV theo Platform × BU")}
+            kind={t("Grouped bar")}
+            desc={t("Cập nhật theo tháng đang chọn.")}
           />
           <PlatformBuSection />
           <CardFootnote>
-            Nguồn: VN RunRate&apos;26 — &quot;GMV ACTUALISATION 2026&quot;, cột T5/2026.
+            {t("Nguồn: VN RunRate'26 — \"GMV ACTUALISATION 2026\", theo từng kênh mỗi tháng.")}
           </CardFootnote>
         </Card>
         <Card>
           <CardHeader
-            title="% Đạt Target theo kênh"
-            kind="Bullet / progress"
-            desc="Tháng 4/2026 — chỉ 3 kênh MCC đang chạy."
+            title={t("% Đạt Target theo kênh")}
+            kind={t("Bullet / progress")}
+            desc={t("Cập nhật theo tháng đang chọn.")}
           />
           <TargetAchievementSection />
           <CardFootnote>
-            Tính từ VN RunRate&apos;26 — khối &quot;Vietnam %&quot; theo kênh.
+            {t("Tính từ VN RunRate'26 — Actual ÷ Target theo từng kênh mỗi tháng.")}
           </CardFootnote>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title={t("GMV theo Content Type / Kênh traffic")}
+          kind={t("Bar list")}
+          desc={t("Tháng đang chọn, so với tháng trước. Shopee: Kênh traffic (Facebook/Websites/Shopee Video/Shopee Live/Khác). TikTok Shop: Content Type (Video/External Traffic/Showcase/Livestream/Khác).")}
+        />
+        <MonthlyContentBreakdownSection />
+        <CardFootnote>
+          {t("Lazada không có cột tương đương trong sheet nguồn nên không hiện ở đây. Shopee gộp ~20 giá trị Channel gốc về 4 nhóm chính + \"Khác\" để nhất quán qua các tháng — di chuột vào \"Khác\" để xem chi tiết từng kênh gốc bên trong.")}
+        </CardFootnote>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title={t("So sánh chi tiết theo kênh")}
+          kind={t("Table")}
+          desc={t("Luôn hiện đủ 6 tổ hợp Platform × BU khớp bộ lọc — kênh chưa có dữ liệu tháng này hiện \"—\".")}
+        />
+        <MonthlyChannelTable />
+        <CardFootnote>
+          {t("So sánh với tháng liền trước (MoM) — không có \"so cùng tháng năm trước\" vì dữ liệu nguồn chỉ có 1 năm. Lazada không có cột Order Status/Refund nên Hoàn thành/Refund luôn để trống cho kênh đó; Lazada PC hiện chưa vận hành nên luôn \"—\". ROAS = GMV ÷ Payout của đúng tháng đang xem, không phải trung bình.")}
+        </CardFootnote>
+      </Card>
     </div>
   );
 }

@@ -42,6 +42,8 @@ export function BarList({
         barCategoryGap={10}
       >
         <XAxis type="number" hide />
+        {/* interval={0}: Recharts defaults category axes to interval="preserveEnd", which can silently
+            drop a tick label (bars still render) when it misjudges label spacing at small heights. */}
         <YAxis
           type="category"
           dataKey="name"
@@ -49,6 +51,7 @@ export function BarList({
           tickLine={false}
           axisLine={false}
           tick={{ fontSize: 11.5 }}
+          interval={0}
         />
         <Tooltip
           cursor={{ fill: "var(--color-surface-alt)" }}
