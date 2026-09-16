@@ -11,7 +11,7 @@ export default function OperationsPage() {
       <div>
         <h1 className="text-[22px] font-bold text-ink-1">{t("Vận hành: Payout & ROAS")}</h1>
         <p className="text-[13px] text-ink-2">
-          {t("Hiệu quả chi hoa hồng theo kênh — nguồn: 5 sheet chi tiết giao dịch, group theo tháng (Tháng 4–8/2026).")}{" "}
+          {t("Hiệu quả chi hoa hồng theo kênh — nguồn: 5 sheet chi tiết giao dịch, group theo tháng (Tháng 4–9/2026).")}{" "}
           {t("Đổi")} <b>{t("Kỳ báo cáo")}</b> {t("ở thanh lọc phía trên để xem theo từng tháng.")}
         </p>
       </div>

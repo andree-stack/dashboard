@@ -154,8 +154,8 @@ const DICT: Record<string, string> = {
   "Lazada không có cột Order Status trong sheet nguồn.": "Lazada has no Order Status column in the source sheet.",
   "GMV thật: ": "Real GMV: ",
   "Không có dữ liệu cho tháng này.": "No data for this month.",
-  "Hiệu quả chi hoa hồng theo kênh — nguồn: 5 sheet chi tiết giao dịch, group theo tháng (Tháng 4–8/2026).":
-    "Commission spend efficiency by channel — source: 5 transaction detail sheets, grouped by month (Month 4–8/2026).",
+  "Hiệu quả chi hoa hồng theo kênh — nguồn: 5 sheet chi tiết giao dịch, group theo tháng (Tháng 4–9/2026).":
+    "Commission spend efficiency by channel — source: 5 transaction detail sheets, grouped by month (Month 4–9/2026).",
   "ở thanh lọc phía trên để xem theo từng tháng.": "in the filter bar above to view by month.",
   "Nguồn: Σ commission/spend theo đơn hàng — Shopee: \"Order Brand Commission to Affiliate\"; TikTok Shop: Commission + Shop Ads + creator bonus; Lazada: \"Est. Spend\".":
     "Source: Σ commission/spend per order — Shopee: \"Order Brand Commission to Affiliate\"; TikTok Shop: Commission + Shop Ads + creator bonus; Lazada: \"Est. Spend\".",

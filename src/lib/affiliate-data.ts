@@ -22,8 +22,8 @@ import {
 
 export type PeriodMode = "month" | "week";
 
-/** Tháng có dữ liệu creator/category/order-status (chỉ T4–T8, khớp phạm vi 5 sheet chi tiết). */
-export const AFFILIATE_MONTHS: MonthKey[] = ["T4", "T5", "T6", "T7", "T8"];
+/** Tháng có dữ liệu creator/category/order-status (chỉ T4–T9, khớp phạm vi 5 sheet chi tiết). */
+export const AFFILIATE_MONTHS: MonthKey[] = ["T4", "T5", "T6", "T7", "T8", "T9"];
 export const DEFAULT_AFFILIATE_MONTH: MonthKey = "T8";
 
 function weekOrder(): WeekKey[] {
