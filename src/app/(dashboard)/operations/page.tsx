@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardFootnote } from "@/components/ui/card";
 import { usePreferences } from "@/components/preferences-context";
-import { PayoutSection, RoasSection, OperationsSummary, OrderStatusSection } from "@/components/charts/operations-client";
+import { PayoutSection, RoasSection, OperationsSummary, OrderStatusSection, OperationsNarrative } from "@/components/charts/operations-client";
 
 export default function OperationsPage() {
   const { t } = usePreferences();
@@ -38,6 +38,18 @@ export default function OperationsPage() {
           </CardFootnote>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title={t("Nhận xét theo kênh affiliate")}
+          kind={t("Tuần gần nhất")}
+          desc={t("Highlight/lowlight tuần gần nhất đã trọn 7 ngày, so WoW và so cùng tuần tháng trước — tập trung GMV (loại Seller Creator), số creator, GMV Live/Video và kênh đang tốt/xấu.")}
+        />
+        <OperationsNarrative />
+        <CardFootnote>
+          {t("Không đi sâu ROAS/Payout ở phần này. Shopee: toàn bộ GMV coi như đã là Affiliate Creator (sheet nguồn chỉ lấy đơn có Affiliate Username). TikTok Shop: GMV = Affiliate Creator + MCN, đã loại Seller Creator.")}
+        </CardFootnote>
+      </Card>
 
       <Card>
         <CardHeader

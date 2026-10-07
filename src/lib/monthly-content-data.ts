@@ -1,6 +1,6 @@
 // Content Type / Kênh traffic theo THÁNG — bản clone của weekly-content-data.ts cho tab Tổng quan,
 // cùng nguồn (5 sheet chi tiết) và cùng cách bucketize (top-4 + "Khác" giữ chi tiết gốc cho
-// tooltip), chỉ khác group theo Tháng (T4–T9) thay vì theo Tuần. Lazada không có cột tương đương.
+// tooltip), chỉ khác group theo Tháng (T4–T10) thay vì theo Tuần. Lazada không có cột tương đương.
 import type { BU, BuFilter, MonthKey, PlatformFilter } from "./data";
 
 type ContentPlatform = "Shopee" | "TikTok Shop";
@@ -15,7 +15,8 @@ export const monthlyContentRaw: Record<
       T6: { "EdgeBrowser": 1165600, "Facebook": 93771464, "Google Search": 7845040, "Instagram": 19000794, "Others": 113833107, "Pinterest": 1165600, "ShopbackApp": 4164026, "Shopee Live": 22645530, "Shopee Video": 91364809, "Threads": 604000, "TikTok": 624019, "Twitter": 463300, "Websites": 81544502, "YouTube": 1680409, "Zalo": 4822813 },
       T7: { "Capcut": 1901488, "Code Sharing": 4976972, "EdgeBrowser": 377522, "Facebook": 286672253, "FreeTube": 291060, "Google Search": 7053515, "Instagram": 19363755, "Messenger": 738720, "Others": 157483480, "Pinterest": 350484, "ShopbackApp": 8862623, "Shopee Live": 228704169, "Shopee Video": 209275816, "TikTok": 9461603, "Twitter": 1610892, "Websites": 218306947, "YouTube": 5470367, "Zalo": 27883514 },
       T8: { "Capcut": 2052243, "Code Sharing": 6526827, "Facebook": 364091732, "FreeTube": 1036649, "Google Search": 33477556, "Instagram": 29945684, "Line": 1168811, "Messenger": 2183745, "Others": 242747715, "Pinterest": 3290038, "ShopbackApp": 15939968, "Shopee Live": 135050300, "Shopee Video": 267296113, "Threads": 889098, "TikTok": 27553146, "Trassion": 2735009, "Twitter": 692550, "Websites": 341716379, "YouTube": 10459148, "Zalo": 41313171 },
-      T9: { "Capcut": 875060, "Code Sharing": 5981112, "EdgeBrowser": 1220320, "Facebook": 302901712, "Google Search": 10322602, "Instagram": 34141421, "Messenger": 659250, "Others": 151494963, "Pinterest": 2391002, "ShopbackApp": 10254609, "Shopee Live": 311261699, "Shopee Video": 233286932, "Threads": 2052344, "TikTok": 13942665, "Twitter": 1456728, "Websites": 298305108, "YouTube": 15856831, "Zalo": 23769660 },
+      T9: { "Capcut": 1321960, "Code Sharing": 5981112, "EdgeBrowser": 3336735, "Facebook": 318545109, "Google Search": 10322602, "Instagram": 40010028, "Messenger": 659250, "Others": 154625285, "Pinterest": 2391002, "ShopbackApp": 10651185, "Shopee Live": 361074221, "Shopee Video": 256542449, "Threads": 2052344, "TikTok": 13942665, "Twitter": 1456728, "Websites": 303173726, "YouTube": 16831531, "Zalo": 23769660 },
+      T10: { "Facebook": 29182159, "Google Search": 799254, "Instagram": 921567, "Others": 18314622, "Shopee Live": 78348131, "Shopee Video": 24366873, "Trassion": 1137763, "Websites": 34898765, "YouTube": 340864, "Zalo": 3088991 },
     },
     MCC: {
       T4: { "Code Sharing": 0, "Facebook": 45104519, "Google Search": 210033, "Instagram": 6132281, "Others": 24879133, "Pinterest": 0, "ShopbackApp": 5021978, "Shopee Live": 34619960, "Shopee Video": 23180611, "Threads": 0, "Twitter": 1830906, "Websites": 31081741, "Zalo": 2342662 },
@@ -23,7 +24,8 @@ export const monthlyContentRaw: Record<
       T6: { "Code Sharing": 1015540, "Facebook": 87616113, "Google Search": 3238811, "Instagram": 2903092, "Others": 54409321, "ShopbackApp": 8713859, "Shopee Live": 40787237, "Shopee Video": 33912319, "Threads": 248170, "TikTok": 3507134, "Websites": 53823898, "WhatsApp": 219300, "YouTube": 866193, "Zalo": 10271589 },
       T7: { "Code Sharing": 2246218, "Facebook": 77975252, "Google Search": 0, "Instagram": 6672330, "Messenger": 1369544, "Others": 28317524, "ShopbackApp": 1260093, "Shopee Live": 80506992, "Shopee Video": 40933688, "Trassion": 0, "Websites": 51493341, "YouTube": 5129259, "Zalo": 6834741 },
       T8: { "Capcut": 0, "Code Sharing": 1270676, "Facebook": 93422346, "FreeTube": 0, "Google Search": 6416629, "Instagram": 7024270, "Others": 29955575, "ShopbackApp": 9742765, "Shopee Live": 107481474, "Shopee Video": 29079072, "Threads": 918521, "TikTok": 2094191, "Twitter": 0, "Websites": 59905612, "YouTube": 2472802, "Zalo": 10336050 },
-      T9: { "Code Sharing": 245180, "Facebook": 43387948, "Google Search": 908371, "Instagram": 8237539, "Messenger": 2268665, "Others": 13682747, "ShopbackApp": 2970105, "Shopee Live": 140005337, "Shopee Video": 25503567, "Websites": 27031280, "YouTube": 2774966, "Zalo": 8175144 },
+      T9: { "Code Sharing": 245180, "Facebook": 43795147, "Google Search": 908371, "Instagram": 8237539, "Messenger": 2268665, "Others": 12843593, "ShopbackApp": 2970105, "Shopee Live": 153761758, "Shopee Video": 28004388, "Websites": 27031280, "YouTube": 3606839, "Zalo": 8175144 },
+      T10: { "Facebook": 1426365, "Google Search": 1170889, "Others": 4857140, "Shopee Live": 16089350, "Websites": 11693350 },
     },
   },
   "TikTok Shop": {
@@ -32,7 +34,8 @@ export const monthlyContentRaw: Record<
       T6: { "(Không có Content Type)": 89458000, "Video": 62975303, "External Traffic": 19330165, "Showcase": 4984610 },
       T7: { "(Không có Content Type)": 197266140, "External Traffic": 93319750, "Video": 75430758, "Showcase": 65587337 },
       T8: { "(Không có Content Type)": 421795269, "External Traffic": 119761809, "Showcase": 10510731, "Video": 140127102 },
-      T9: { "(Không có Content Type)": 345919510, "External Traffic": 97752759, "Livestream": 1915598, "Showcase": 19654780, "Video": 164800040 },
+      T9: { "(Không có Content Type)": 366631554, "External Traffic": 111619517, "Livestream": 1915598, "Showcase": 20385805, "Video": 180788407 },
+      T10: { "(Không có Content Type)": 34605000, "External Traffic": 30816506, "Showcase": 1929766, "Video": 18176491 },
     },
     MCC: {
       T4: { "Video": 116046743, "External Traffic": 64651238, "(Không có Content Type)": 47250731, "Showcase": 30941426, "Livestream": 3546059 },
@@ -40,7 +43,8 @@ export const monthlyContentRaw: Record<
       T6: { "(Không có Content Type)": 347333442, "Video": 171432533, "External Traffic": 104092208, "Showcase": 62808210, "Livestream": 12264318 },
       T7: { "Video": 168850671, "(Không có Content Type)": 95065450, "External Traffic": 89090656, "Showcase": 61298461, "Livestream": 1518524 },
       T8: { "(Không có Content Type)": 90225420, "External Traffic": 149884784, "Livestream": 20484205, "Showcase": 42910143, "Video": 198861421 },
-      T9: { "(Không có Content Type)": 175256605, "External Traffic": 112258248, "Livestream": 5344494, "Showcase": 52333345, "Video": 210856665 },
+      T9: { "(Không có Content Type)": 201646605, "External Traffic": 119092916, "Livestream": 5344494, "Showcase": 54096682, "Video": 237823486 },
+      T10: { "(Không có Content Type)": 38067000, "External Traffic": 13647393, "Showcase": 21055066, "Video": 27759689 },
     },
   },
 };

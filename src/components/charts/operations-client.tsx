@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
+import { TrendingUp, TrendingDown, Lightbulb } from "lucide-react";
 import { useFilters } from "@/components/filter-context";
 import { usePreferences } from "@/components/preferences-context";
 import { BarList } from "@/components/charts/bar-list";
 import { MONTHS, monthlyChannelOps, getChannelOps, platformColor, type Platform, type BU } from "@/lib/data";
 import { getOrderStatusBreakdown } from "@/lib/affiliate-data";
+import { getOperationsHighlights } from "@/lib/operations-highlights";
 import { translateMonthLabel } from "@/lib/i18n";
-import { formatPercent } from "@/lib/utils";
+import { formatPercent, cn } from "@/lib/utils";
 
 function channelRows(month: ReturnType<typeof useFilters>["month"]) {
   const monthData = monthlyChannelOps[month];
@@ -153,6 +155,64 @@ export function OrderStatusSection() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * Nhận xét dạng văn xuôi cho 4 kênh affiliate chính, tính theo tuần gần nhất đã trọn 7 ngày
+ * (dùng chung `week`/`compareWeek` từ FilterContext — đổi ở tab Theo tuần sẽ phản ánh luôn ở đây).
+ * Cố tình không nói về ROAS/Payout — chỉ tập trung GMV (loại Seller Creator), số creator, GMV
+ * Live/Video, kênh traffic/content tốt-xấu và creator đóng góp chính, kết ở gợi ý cải thiện.
+ */
+export function OperationsNarrative() {
+  const { week } = useFilters();
+  const { t } = usePreferences();
+  const rows = useMemo(() => getOperationsHighlights(week), [week]);
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {rows.map((r) => (
+        <div key={r.channel.key} className="rounded-xl border border-border bg-surface p-4">
+          <div className="mb-3 flex items-baseline justify-between gap-2">
+            <h4 className="text-[14px] font-bold text-ink-1">{r.channel.label}</h4>
+            <span className="text-[11px] text-ink-3">
+              {t("Tuần")} {r.weekLabel}
+            </span>
+          </div>
+
+          {r.highlights.length > 0 && (
+            <ul className="mb-2 space-y-1.5">
+              {r.highlights.map((text, i) => (
+                <li key={`h-${i}`} className="flex items-start gap-2 text-[12.5px] text-ink-1">
+                  <TrendingUp size={14} className="mt-0.5 shrink-0 text-good-ink" />
+                  <span>{text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {r.lowlights.length > 0 && (
+            <ul className="mb-3 space-y-1.5">
+              {r.lowlights.map((text, i) => (
+                <li key={`l-${i}`} className="flex items-start gap-2 text-[12.5px] text-ink-1">
+                  <TrendingDown size={14} className="mt-0.5 shrink-0 text-crit-ink" />
+                  <span>{text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <p
+            className={cn(
+              "flex items-start gap-2 rounded-lg bg-accent-soft px-3 py-2 text-[12px] text-accent-ink"
+            )}
+          >
+            <Lightbulb size={14} className="mt-0.5 shrink-0" />
+            <span>{r.guidance}</span>
+          </p>
+        </div>
+      ))}
     </div>
   );
 }
