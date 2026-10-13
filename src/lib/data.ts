@@ -26,7 +26,7 @@ export const MONTHS: { key: MonthKey; label: string; shortLabel: string }[] = [
   { key: "T12", label: "Tháng 12/2026", shortLabel: "T12" },
 ];
 
-/** Tháng gần nhất có đủ dữ liệu (T9 đã kết thúc, T10 đang chạy dở — số MTD tới 04/10). */
+/** Tháng gần nhất có đủ dữ liệu (T9 đã kết thúc, T10 đang chạy dở — số MTD tới 12/10). */
 export const DEFAULT_MONTH: MonthKey = "T9";
 
 // ---- Tab 1 · Tổng quan -----------------------------------------------
@@ -47,7 +47,7 @@ export const monthlyTrend: {
   { month: "T7", target: 2_535_103_627, actual: 2_476_345_473, isMtd: false },
   { month: "T8", target: 2_862_142_701, actual: 3_136_644_465, isMtd: false },
   { month: "T9", target: 3_674_667_905, actual: 3_242_143_744, isMtd: false },
-  { month: "T10", target: 3_927_000_000, actual: 361_442_742, isMtd: true },
+  { month: "T10", target: 3_927_000_000, actual: 1_406_037_818, isMtd: true },
   { month: "T11", target: 5_152_398_492, actual: null, isMtd: false },
   { month: "T12", target: 4_798_264_070, actual: null, isMtd: false },
 ];
@@ -137,12 +137,12 @@ export const monthlyPlatformBu: Record<
     { platform: "TikTok Shop", bu: "MCC", actual: 583_075_173, target: 583_000_000 },
   ],
   T10: [
-    { platform: "Shopee", bu: "PC", actual: 202_447_745, target: 2_327_000_000 },
-    { platform: "Shopee", bu: "MCC", actual: 45_493_648, target: 500_000_000 },
+    { platform: "Shopee", bu: "PC", actual: 941_705_190, target: 2_327_000_000 },
+    { platform: "Shopee", bu: "MCC", actual: 175_394_813, target: 500_000_000 },
     { platform: "Lazada", bu: "PC", actual: 0, target: 0 },
-    { platform: "Lazada", bu: "MCC", actual: 223_700, target: 0 },
-    { platform: "TikTok Shop", bu: "PC", actual: 50_915_695, target: 500_000_000 },
-    { platform: "TikTok Shop", bu: "MCC", actual: 62_361_954, target: 600_000_000 },
+    { platform: "Lazada", bu: "MCC", actual: 797_900, target: 0 },
+    { platform: "TikTok Shop", bu: "PC", actual: 112_106_048, target: 500_000_000 },
+    { platform: "TikTok Shop", bu: "MCC", actual: 176_033_867, target: 600_000_000 },
   ],
   T11: [
     { platform: "Shopee", bu: "PC", actual: null, target: 1_632_161_457 },
@@ -431,11 +431,11 @@ export const monthlyChannelOps: Partial<Record<MonthKey, Record<string, ChannelO
     "TikTok Shop-MCC": { gmv: 618_004_183, payout: 23_681_153, orders: 1_792, avgCommissionPct: 3.83, roas: 26.10, completionRatePct: 58.60, refundRatePct: 0.54 },
   },
   T10: {
-    "Shopee-PC": { gmv: 191_398_989, payout: 11_155_467, orders: 212, avgCommissionPct: 5.83, roas: 17.16, completionRatePct: 18.96, refundRatePct: 5.77 },
-    "Shopee-MCC": { gmv: 35_237_094, payout: 2_270_302, orders: 43, avgCommissionPct: 6.44, roas: 15.52, completionRatePct: 14.98, refundRatePct: 29.11 },
-    "Lazada-MCC": { gmv: 223_700, payout: 17_190, orders: 1, avgCommissionPct: 7.68, roas: 13.01, completionRatePct: null, refundRatePct: null },
-    "TikTok Shop-PC": { gmv: 85_527_763, payout: 24_615, orders: 79, avgCommissionPct: 0.03, roas: 3474.62, completionRatePct: 0.58, refundRatePct: 0 },
-    "TikTok Shop-MCC": { gmv: 100_529_148, payout: 136_975, orders: 286, avgCommissionPct: 0.14, roas: 733.92, completionRatePct: 1.76, refundRatePct: 0 },
+    "Shopee-PC": { gmv: 823_883_765, payout: 59_089_349, orders: 1_033, avgCommissionPct: 7.17, roas: 13.94, completionRatePct: 50.53, refundRatePct: 14.3 },
+    "Shopee-MCC": { gmv: 138_028_154, payout: 9_199_085, orders: 161, avgCommissionPct: 6.66, roas: 15.0, completionRatePct: 44.75, refundRatePct: 27.07 },
+    "Lazada-MCC": { gmv: 797_900, payout: 63_990, orders: 3, avgCommissionPct: 8.02, roas: 12.47, completionRatePct: null, refundRatePct: null },
+    "TikTok Shop-PC": { gmv: 245_753_116, payout: 2_100_721, orders: 195, avgCommissionPct: 0.85, roas: 116.99, completionRatePct: 11.7, refundRatePct: null },
+    "TikTok Shop-MCC": { gmv: 324_482_755, payout: 6_816_936, orders: 940, avgCommissionPct: 2.1, roas: 47.6, completionRatePct: 25.1, refundRatePct: null },
   },
 };
 
