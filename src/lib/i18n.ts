@@ -101,6 +101,8 @@ const DICT: Record<string, string> = {
   // Affiliate page
   "Hiệu suất creator/affiliate": "Creator/affiliate performance",
   "Top Creator / Affiliate theo GMV": "Top Creator / Affiliate by GMV",
+  "Top 15 Creator theo từng kênh": "Top 15 creators by channel",
+  " — sort theo GMV giảm dần, mỗi kênh tối đa 15 creator.": " — sorted by GMV descending, up to 15 creators per channel.",
   "Bar ngang": "Horizontal bar",
   "GMV theo Category sản phẩm": "GMV by product category",
   "GMV theo Loại chiến dịch": "GMV by campaign type",

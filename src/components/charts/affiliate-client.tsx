@@ -16,10 +16,18 @@ import {
   getGmvSourceBreakdown,
 } from "@/lib/affiliate-data";
 import { translateMonthLabel } from "@/lib/i18n";
-import { platformColor } from "@/lib/data";
+import { platformColor, type Platform, type BU } from "@/lib/data";
 import { formatPercent, cn } from "@/lib/utils";
 
 const CREATOR_PAGE_SIZE = 10;
+const TOP_N_BY_CHANNEL = 15;
+
+const CREATOR_CHANNELS: { platform: Platform; bu: BU; label: string }[] = [
+  { platform: "Shopee", bu: "PC", label: "Shopee PC" },
+  { platform: "Shopee", bu: "MCC", label: "Shopee MCC" },
+  { platform: "TikTok Shop", bu: "PC", label: "TikTok Shop PC" },
+  { platform: "TikTok Shop", bu: "MCC", label: "TikTok Shop MCC" },
+];
 
 type Delta = { pct: number | null; direction: "up" | "down" | "flat" | null };
 function toDelta(pct: number | null): Delta {
@@ -163,6 +171,54 @@ function TopCreatorsCard() {
         </span>
       </div>
     </>
+  );
+}
+
+function TopCreatorsByChannelCard({ channel }: { channel: (typeof CREATOR_CHANNELS)[number] }) {
+  const { mode, period, comparePeriod } = useAffiliateCtx();
+  const { t, formatMoney } = usePreferences();
+  const rows = useMemo(
+    () => getCreatorRows(mode, period, comparePeriod, channel.platform, channel.bu).slice(0, TOP_N_BY_CHANNEL),
+    [mode, period, comparePeriod, channel.platform, channel.bu]
+  );
+
+  return (
+    <Card>
+      <div className="mb-3 flex items-center gap-1.5 text-[14px] font-bold text-ink-1">
+        <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: platformColor[channel.platform] }} />
+        {channel.label}
+      </div>
+      {rows.length === 0 ? (
+        <p className="rounded-lg bg-surface-alt px-3 py-6 text-center text-[12.5px] text-ink-3">
+          {t("Không có creator nào khớp bộ lọc ở kỳ này.")}
+        </p>
+      ) : (
+        <table className="w-full text-left text-[12.5px]">
+          <thead>
+            <tr className="border-b border-border text-[11px] uppercase tracking-wide text-ink-3">
+              <th className="py-2 pr-2 font-bold">#</th>
+              <th className="py-2 pr-2 font-bold">{t("Creator")}</th>
+              <th className="py-2 pr-2 text-right font-bold">{t("GMV")}</th>
+              <th className="py-2 pr-2 text-right font-bold">{t("So sánh GMV")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.name} className="border-b border-border/60 last:border-0">
+                <td className="py-1.5 pr-2 tabular text-ink-3">{i + 1}</td>
+                <td className="max-w-[160px] truncate py-1.5 pr-2 font-semibold text-ink-1" title={r.name}>
+                  {r.name}
+                </td>
+                <td className="py-1.5 pr-2 text-right tabular font-semibold text-ink-1">{formatMoney(r.gmv)}</td>
+                <td className="py-1.5 pr-2 text-right">
+                  <DeltaTag d={toDelta(r.wowPct)} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Card>
   );
 }
 
@@ -424,6 +480,22 @@ export function AffiliateDashboard() {
             {t("Nguồn: group theo Affiliate Username (Shopee) / Creator Username (TikTok Shop). Lazada không có dữ liệu creator ở cấp giao dịch.")}
           </CardFootnote>
         </Card>
+
+        <div>
+          <div className="mb-3">
+            <h3 className="text-[15px] font-semibold text-ink-1">{t("Top 15 Creator theo từng kênh")}</h3>
+            <p className="mt-0.5 text-[12.5px] text-ink-2">
+              {periodLabel}
+              {compareLabel ? `${t(" · So sánh với ")}${compareLabel}` : ""}
+              {t(" — sort theo GMV giảm dần, mỗi kênh tối đa 15 creator.")}
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {CREATOR_CHANNELS.map((ch) => (
+              <TopCreatorsByChannelCard key={`${ch.platform}-${ch.bu}`} channel={ch} />
+            ))}
+          </div>
+        </div>
 
         <div className="grid items-start gap-4 md:grid-cols-2">
           <Card>
