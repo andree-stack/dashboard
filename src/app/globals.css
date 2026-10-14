@@ -24,6 +24,7 @@
   --s-lazada: #eb6834;
   --s-tts: #1baf7a;
   --s-4: #eda100;
+  --s-5: #8456d6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,6 +52,7 @@
     --s-lazada: #d95926;
     --s-tts: #199e70;
     --s-4: #c98500;
+    --s-5: #a382e8;
   }
 }
 
@@ -78,6 +80,7 @@
   --color-s-lazada: var(--s-lazada);
   --color-s-tts: var(--s-tts);
   --color-s-4: var(--s-4);
+  --color-s-5: var(--s-5);
   --font-sans: var(--font-inter), -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 

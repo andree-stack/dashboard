@@ -14,6 +14,7 @@ const DICT: Record<string, string> = {
   "Affiliate & Creator": "Affiliate & Creator",
   "Vận hành": "Operations",
   "Content & Chiến dịch": "Content & Campaigns",
+  "Sản phẩm": "Product",
   "Đăng xuất": "Log out",
 
   // Filter bar
@@ -245,6 +246,20 @@ const DICT: Record<string, string> = {
     "Lazada has no equivalent column in the source sheet so it isn't shown here. Shopee consolidates ~20 raw Channel values into 4 main groups + \"Other\" for consistency across weeks — hover over \"Other\" to see each underlying channel.",
   "Lazada không có cột Order Status/Refund nên Hoàn thành/Refund luôn để trống cho kênh đó, giống tab Vận hành; Lazada PC hiện chưa vận hành nên luôn \"—\". ROAS = GMV ÷ Payout của đúng tuần đang xem, không phải trung bình. TikTok Shop PC và Lazada MCC có volume thấp theo tuần nên ROAS/% so sánh có thể biến động mạnh do độ trễ ghi nhận hoa hồng hoặc chỉ vài đơn — đọc cùng với cột Đơn để tránh hiểu nhầm là xu hướng thật.":
     "Lazada has no Order Status/Refund column so Completion/Refund always show blank for that channel, same as the Operations tab; Lazada PC isn't operating yet so it always shows \"—\". ROAS = GMV ÷ Payout for the exact week shown, not an average. TikTok Shop PC and Lazada MCC have low weekly volume so ROAS/% comparisons can swing sharply due to commission-recognition lag or just a few orders — read alongside the Orders column to avoid mistaking it for a real trend.",
+
+  // Product page
+  "Số lượng sản phẩm bán ra theo từng kênh, creator bán nhiều nhất mỗi sản phẩm và AOV của creator đó —":
+    "Units sold per channel, the top-selling creator for each product, and that creator's AOV —",
+  "sản phẩm": "products",
+  "SP đã bán": "units sold",
+  "SL bán": "Units sold",
+  "Creator bán nhiều nhất": "Top-selling creator",
+  "AOV của creator": "Creator AOV",
+  "SP": "units",
+  "Xem thêm": "Show more",
+  "Thu gọn": "Collapse",
+  "Nguồn: Item Name/Qty (Shopee), Product Name/Quantity (TikTok Shop) group theo Tháng. Creator bán nhiều nhất = creator có tổng SL bán cao nhất của đúng sản phẩm đó trong tháng. AOV của creator = GMV ÷ số đơn CỦA RIÊNG creator đó trong cả kênh ở tháng này (không chỉ sản phẩm này). Lazada không có cột creator/product-level tương đương nên không xuất hiện.":
+    "Source: Item Name/Qty (Shopee), Product Name/Quantity (TikTok Shop) grouped by month. Top-selling creator = the creator with the highest units sold of that exact product that month. Creator AOV = GMV ÷ order count for that creator ALONE across the whole channel that month (not just this product). Lazada has no equivalent creator/product-level column so it doesn't appear.",
 };
 
 export function translate(vi: string, lang: Lang): string {

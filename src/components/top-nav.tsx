@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, CalendarRange, Users, Activity, FolderClock, LogOut } from "lucide-react";
+import { LayoutDashboard, CalendarRange, Users, Activity, FolderClock, Package, LogOut } from "lucide-react";
 import { signOutAction } from "@/app/actions";
 import { usePreferences } from "@/components/preferences-context";
 import type { Lang } from "@/lib/i18n";
@@ -15,6 +15,7 @@ const tabs = [
   { href: "/affiliate", label: "Affiliate & Creator", icon: Users, color: "var(--color-s-4)" },
   { href: "/operations", label: "Vận hành", icon: Activity, color: "var(--color-s-lazada)" },
   { href: "/content", label: "Content & Chiến dịch", icon: FolderClock, color: "var(--color-s-shopee)" },
+  { href: "/product", label: "Sản phẩm", icon: Package, color: "var(--color-s-5)" },
 ];
 
 function PrefToggle<T extends string>({
