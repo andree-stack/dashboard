@@ -248,18 +248,18 @@ const DICT: Record<string, string> = {
     "Lazada has no Order Status/Refund column so Completion/Refund always show blank for that channel, same as the Operations tab; Lazada PC isn't operating yet so it always shows \"—\". ROAS = GMV ÷ Payout for the exact week shown, not an average. TikTok Shop PC and Lazada MCC have low weekly volume so ROAS/% comparisons can swing sharply due to commission-recognition lag or just a few orders — read alongside the Orders column to avoid mistaking it for a real trend.",
 
   // Product page
-  "Số lượng sản phẩm bán ra theo từng kênh, creator bán nhiều nhất mỗi sản phẩm và AOV của creator đó —":
-    "Units sold per channel, the top-selling creator for each product, and that creator's AOV —",
+  "Số lượng sản phẩm bán ra theo từng kênh, top 5 creator bán nhiều nhất mỗi sản phẩm và AOV của từng creator đó —":
+    "Units sold per channel, the top 5 best-selling creators for each product, and each creator's AOV —",
   "sản phẩm": "products",
   "SP đã bán": "units sold",
   "SL bán": "Units sold",
-  "Creator bán nhiều nhất": "Top-selling creator",
   "AOV của creator": "Creator AOV",
   "SP": "units",
   "Xem thêm": "Show more",
   "Thu gọn": "Collapse",
-  "Nguồn: Item Name/Qty (Shopee), Product Name/Quantity (TikTok Shop) group theo Tháng. Creator bán nhiều nhất = creator có tổng SL bán cao nhất của đúng sản phẩm đó trong tháng. AOV của creator = GMV ÷ số đơn CỦA RIÊNG creator đó trong cả kênh ở tháng này (không chỉ sản phẩm này). Lazada không có cột creator/product-level tương đương nên không xuất hiện.":
-    "Source: Item Name/Qty (Shopee), Product Name/Quantity (TikTok Shop) grouped by month. Top-selling creator = the creator with the highest units sold of that exact product that month. Creator AOV = GMV ÷ order count for that creator ALONE across the whole channel that month (not just this product). Lazada has no equivalent creator/product-level column so it doesn't appear.",
+  "Không có dữ liệu creator cho sản phẩm này.": "No creator data for this product.",
+  "Nguồn: Item Name/Qty (Shopee), Product Name/Quantity (TikTok Shop) group theo Tháng. Top 5 creator = 5 creator có SL bán cao nhất của đúng sản phẩm đó trong tháng, sort giảm dần. AOV của mỗi creator = GMV ÷ số đơn CỦA RIÊNG creator đó trong cả kênh ở tháng này (không chỉ sản phẩm này). Lazada không có cột creator/product-level tương đương nên không xuất hiện.":
+    "Source: Item Name/Qty (Shopee), Product Name/Quantity (TikTok Shop) grouped by month. Top 5 creators = the 5 creators with the highest units sold of that exact product that month, sorted descending. Each creator's AOV = GMV ÷ order count for that creator ALONE across the whole channel that month (not just this product). Lazada has no equivalent creator/product-level column so it doesn't appear.",
 };
 
 export function translate(vi: string, lang: Lang): string {

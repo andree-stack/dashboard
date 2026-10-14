@@ -2,7 +2,7 @@
 // cho affiliate-raw-data.ts/data.ts, group theo tên sản phẩm + Tháng, tách riêng theo từng kênh
 // Platform×BU). Lazada không có cột Item/Product Name + creator trong sheet nguồn nên không có mặt.
 import type { MonthKey, Platform, BU } from "./data";
-import { productMonthRaw, type ProductEntry } from "./product-raw-data";
+import { productMonthRaw, type ProductEntry, type ProductCreatorEntry } from "./product-raw-data";
 
 export type ProductChannelKey = "Shopee-PC" | "Shopee-MCC" | "TikTok Shop-PC" | "TikTok Shop-MCC";
 
@@ -17,9 +17,14 @@ export const PRODUCT_CHANNELS: { key: ProductChannelKey; platform: Platform; bu:
 export const PRODUCT_MONTHS: MonthKey[] = ["T4", "T5", "T6", "T7", "T8", "T9", "T10"];
 export const DEFAULT_PRODUCT_MONTH: MonthKey = "T10";
 
-export type ProductRow = ProductEntry & {
-  /** AOV (GMV ÷ số đơn) của topCreator trong CẢ kênh ở tháng này — không chỉ riêng sản phẩm này. */
-  topCreatorAov: number | null;
+export type ProductCreatorRow = ProductCreatorEntry & {
+  /** AOV (GMV ÷ số đơn) của creator này trong CẢ kênh ở tháng này — không chỉ riêng sản phẩm này. */
+  aov: number | null;
+};
+
+export type ProductRow = Omit<ProductEntry, "topCreators"> & {
+  /** Top 5 creator bán sản phẩm này nhiều nhất (theo SL, giảm dần), kèm AOV của riêng từng creator. */
+  topCreators: ProductCreatorRow[];
 };
 
 /** Danh sách sản phẩm của 1 kênh (Platform×BU) ở 1 tháng, sort theo số lượng bán giảm dần. */
@@ -28,8 +33,7 @@ export function getProductRows(channel: ProductChannelKey, month: MonthKey): Pro
   return rows
     .map((r) => ({
       ...r,
-      topCreatorAov:
-        r.topCreatorGmv != null && r.topCreatorOrders ? r.topCreatorGmv / r.topCreatorOrders : null,
+      topCreators: r.topCreators.map((c) => ({ ...c, aov: c.orders ? c.gmv / c.orders : null })),
     }))
     .sort((a, b) => b.qty - a.qty);
 }
